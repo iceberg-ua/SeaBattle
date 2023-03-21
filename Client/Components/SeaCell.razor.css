@@ -1,0 +1,22 @@
+.sea-cell {
+    width: 50px;
+    height: 50px;
+    background-color: aqua;
+    border: 1px solid black;
+}
+
+.sea-cell:hover {
+    background-color: aquamarine;
+}
+
+.sea-cell.hit {
+    background-color: darkred;
+}
+
+.sea-cell.miss {
+    background-color: black;
+}
+
+.sea-cell.ship {
+    background-color: brown;
+}
