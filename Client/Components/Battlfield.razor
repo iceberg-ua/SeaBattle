@@ -1,0 +1,18 @@
+<h3>Battlefield size: @Size</h3>
+
+@for(int i = 0; i < Size; i++)
+{
+    <tr>
+        @for (int j = 0; j < Size; j++)
+        {
+            <th>
+                <SeaCell></SeaCell>
+            </th>
+        }
+    </tr>
+}
+
+@code {
+    [Parameter]
+    public int Size { get; set; }
+}

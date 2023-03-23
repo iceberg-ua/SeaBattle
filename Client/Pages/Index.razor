@@ -1,3 +1,10 @@
 ﻿@page "/"
 
-<SeaCell></SeaCell>
+<label for="size">Field size:</label>
+<input id="size" type="number" @bind-value=@_fieldSize @bind-value:event="onchange"/>
+
+<BattleField Size=_fieldSize></BattleField>
+
+@code{
+    private int _fieldSize = 10;
+}
