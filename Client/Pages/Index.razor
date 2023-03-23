@@ -3,7 +3,7 @@
 <label for="size">Field size:</label>
 <input id="size" type="number" @bind-value=@_fieldSize @bind-value:event="onchange"/>
 
-<BattleField Size=_fieldSize></BattleField>
+<Battlefield Size=_fieldSize></Battlefield>
 
 @code{
     private int _fieldSize = 10;
