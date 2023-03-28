@@ -1,10 +1,54 @@
 ﻿@page "/"
+@implements IAsyncDisposable
+@using Microsoft.AspNetCore.SignalR.Client
+@inject NavigationManager Navigation
 
 <label for="size">Field size:</label>
-<input id="size" type="number" @bind-value=@_fieldSize @bind-value:event="onchange"/>
+<input id="size" type="number" @bind-value=@_fieldSize @bind-value:event="onchange" />
 
-<Battlefield Size=_fieldSize></Battlefield>
+<Battlefield Size=_fieldSize OnCellClick=OnCellClick></Battlefield>
 
-@code{
-    private int _fieldSize = 10;
+@if (_clickPoint is not null)
+{
+    <h4>Point @_clickPoint.Value was clicked</h4>
 }
+
+@code {
+    private int _fieldSize = 10;
+    private HubConnection? _hubConnection;
+    private (int x, int y)? _clickPoint = null;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _hubConnection = new HubConnectionBuilder()
+        .WithUrl(Navigation.ToAbsoluteUri("/battlehub"))
+        .Build();
+
+        _hubConnection.On<int, int>("AtackCell", (x, y) =>
+        {
+            _clickPoint = (x, y);
+            InvokeAsync(StateHasChanged);
+        });
+
+        await _hubConnection.StartAsync();
+    }
+
+    private async Task OnCellClick((int x, int y) cell)
+    {
+        _clickPoint = cell;
+
+        if(_hubConnection is not null)
+        {
+            await _hubConnection.SendAsync("SendMessage", cell.x, cell.y);    
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if(_hubConnection is not null)
+        {
+            await _hubConnection.DisposeAsync();
+        }
+    }
+}
+

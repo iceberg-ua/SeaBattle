@@ -6,7 +6,7 @@
         @for (int j = 0; j < Size; j++)
         {
             <th>
-                <SeaCell></SeaCell>
+                <SeaCell X=i Y=j Clicked=CellClicked></SeaCell>
             </th>
         }
     </tr>
@@ -14,5 +14,13 @@
 
 @code {
     [Parameter]
-    public int Size { get; set; }
+    public int Size { get; set; } = 10;
+
+    [Parameter]
+    public EventCallback<(int, int)> OnCellClick { get; set; }
+
+    public void CellClicked((int x, int y) cell)
+    {
+        OnCellClick.InvokeAsync(cell);
+    }
 }

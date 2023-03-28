@@ -5,8 +5,8 @@ namespace SeaBattle.Server.Hubs;
 
 class BattleHub : Hub
 {
-      public async Task AtackCell(int x, int y)
+    public async Task SendMessage(int x, int y)
     {
-        await Clients.All.SendAsync("HitCell", x, y);
+        await Clients.All.SendAsync("AtackCell", x, y);
     }
 }

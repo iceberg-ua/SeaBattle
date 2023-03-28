@@ -2,25 +2,35 @@
 
 </div>
 
-@code{
+@code {
+    [Parameter, EditorRequired]
+    public int X { get; set; }
+
+    [Parameter, EditorRequired]
+    public int Y { get; set; }
+
+    [Parameter]
+    public EventCallback<(int, int)> Clicked { get; set; }
+
     enum CellState { empty = 0, hit, miss, ship }
 
     public string CssClass => $"sea-cell {CssState}";
 
     private CellState State { get; set; } = CellState.empty;
-    
-    private string CssState => Enum.GetName<CellState>(State);
 
-    private void CellClick()
+    private string CssState => Enum.GetName<CellState>(State)!;
+
+    private async void CellClick()
     {
         GetNextState();
+        await Clicked.InvokeAsync((X, Y));
     }
 
     private void GetNextState()
     {
-        if((int)State == 3)
+        if ((int)State == 3)
             State = 0;
-        else 
+        else
             State++;
     }
 }
