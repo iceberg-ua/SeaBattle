@@ -10,13 +10,12 @@
     public int Y { get; set; }
 
     [Parameter]
+    public CellState State { get; set; } = CellState.empty;
+
+    [Parameter]
     public EventCallback<(int, int)> Clicked { get; set; }
 
-    enum CellState { empty = 0, hit, miss, ship }
-
     public string CssClass => $"sea-cell {CssState}";
-
-    private CellState State { get; set; } = CellState.empty;
 
     private string CssState => Enum.GetName<CellState>(State)!;
 
