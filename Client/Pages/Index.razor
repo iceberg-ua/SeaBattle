@@ -2,11 +2,12 @@
 @implements IAsyncDisposable
 @using Microsoft.AspNetCore.SignalR.Client
 @inject NavigationManager Navigation
+@inject BattleState State
 
 <label for="size">Field size:</label>
-<input id="size" type="number" @bind-value=@_fieldSize @bind-value:event="onchange" />
+<input id="size" type="number" @bind-value=@State.Size @bind-value:event="onchange" />
 
-<Battlefield Size=_fieldSize OnCellClick=OnCellClick></Battlefield>
+<Battlefield OnCellClick=OnCellClick></Battlefield>
 
 @if (_clickPoint is not null)
 {
@@ -14,7 +15,6 @@
 }
 
 @code {
-    private int _fieldSize = 10;
     private HubConnection? _hubConnection;
     private (int x, int y)? _clickPoint = null;
 
