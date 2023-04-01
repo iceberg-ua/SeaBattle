@@ -1,9 +1,11 @@
+@inject BattleState State
+
 <h3>Battlefield size: @Size</h3>
 
-@for(int i = 0; i < Size; i++)
+@for(int i = 0; i < State.Size; i++)
 {
     <tr>
-        @for (int j = 0; j < Size; j++)
+        @for (int j = 0; j < State.Size; j++)
         {
             <th>
                 <SeaCell X=i Y=j Clicked=CellClicked></SeaCell>

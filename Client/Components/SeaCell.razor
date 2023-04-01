@@ -1,3 +1,5 @@
+@inject BattleState FleetState
+
 <div class="@CssClass" @onmousedown=CellClick>
 
 </div>
@@ -10,10 +12,9 @@
     public int Y { get; set; }
 
     [Parameter]
-    public CellState State { get; set; } = CellState.empty;
-
-    [Parameter]
     public EventCallback<(int, int)> Clicked { get; set; }
+
+    public CellState State { get => (CellState)FleetState.OwnFleet[X,Y]; }
 
     public string CssClass => $"sea-cell {CssState}";
 
@@ -21,15 +22,6 @@
 
     private async void CellClick()
     {
-        GetNextState();
         await Clicked.InvokeAsync((X, Y));
-    }
-
-    private void GetNextState()
-    {
-        if ((int)State == 3)
-            State = 0;
-        else
-            State++;
     }
 }
