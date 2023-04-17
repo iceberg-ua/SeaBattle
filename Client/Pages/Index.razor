@@ -3,9 +3,40 @@
 @using Microsoft.AspNetCore.SignalR.Client
 @inject NavigationManager Navigation
 @inject BattleState State
+@inject IJSRuntime JsRuntime
 
-<label for="size">Field size:</label>
-<input id="size" type="number" @bind-value=@State.Size @bind-value:event="onchange" />
+<div class="row">
+    <div class="col-md-8">
+        <div>
+            <label for="size">Field size:</label>
+            <input id="size" type="number" @bind-value=@State.Size @bind-value:event="onchange"/>
+        </div>
+        <div>
+            <label>Enter username:</label>
+            <input type="text" @bind="_userName" @bind:event="onchange"/>
+            <button @onclick="JoinGameClick" disabled="@_joined">Join Game</button>
+            <button @onclick="ReadyClick" disabled="@(!_joined)">Ready!</button>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <label>Server messages:</label>
+        <div>
+            @if (_serverMessages.Count > 0)
+            {
+                <ul>
+                    @foreach (var msg in _serverMessages)
+                    {
+                        <li>@msg</li>
+                    }
+                </ul>
+            }
+            else
+            {
+                <span>No messages yet</span>
+            }
+        </div>
+    </div>
+</div>
 
 <Battlefield OnCellClick=OnCellClick></Battlefield>
 
@@ -18,11 +49,16 @@
     private HubConnection? _hubConnection;
     private (int x, int y)? _clickPoint = null;
 
+    private bool _joined = false;
+    private string? _userName = null;
+    private List<string> _serverMessages = new();
+
+
     protected override async Task OnInitializedAsync()
     {
         _hubConnection = new HubConnectionBuilder()
-        .WithUrl(Navigation.ToAbsoluteUri("/battlehub"))
-        .Build();
+            .WithUrl(Navigation.ToAbsoluteUri("/battlehub"))
+            .Build();
 
         _hubConnection.On<int, int>("AtackCell", (x, y) =>
         {
@@ -33,22 +69,52 @@
         await _hubConnection.StartAsync();
     }
 
+    #region Hub events
+
     private async Task OnCellClick((int x, int y) cell)
     {
         _clickPoint = cell;
 
-        if(_hubConnection is not null)
+        if (_hubConnection is not null)
         {
-            await _hubConnection.SendAsync("SendMessage", cell.x, cell.y);    
+            await _hubConnection.SendAsync("SendMessage", cell.x, cell.y);
         }
+    }
+
+    #endregion
+
+    private async Task JoinGameClick()
+    {
+        if (string.IsNullOrEmpty(_userName))
+        {
+            await JsRuntime.InvokeVoidAsync("alert", "Please enter user name!");
+        }
+        else
+        {
+            _hubConnection?.On<string, string, bool>("JoinedTable", (userName, tableName, newTable) =>
+            {
+                var action = newTable ? "created" : "joined";
+                var msg = $"{userName} {action} table {tableName}";
+                
+                _serverMessages.Add(msg);
+                
+                InvokeAsync(StateHasChanged);
+            });
+            
+            await _hubConnection?.SendAsync("JoinGroup", _userName)!;
+        }
+    }
+
+    private async Task ReadyClick()
+    {
     }
 
     public async ValueTask DisposeAsync()
     {
-        if(_hubConnection is not null)
+        if (_hubConnection is not null)
         {
             await _hubConnection.DisposeAsync();
         }
     }
-}
 
+}
