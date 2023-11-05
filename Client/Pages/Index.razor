@@ -5,40 +5,46 @@
 @inject BattleState State
 @inject IJSRuntime JsRuntime
 
-<div class="row">
-    <div class="col-md-8">
-        <div>
+<div class="content">
+    <div class="row">
+        <div class="col-md-8">
+            @*         <div>
             <label for="size">Field size:</label>
             <input id="size" type="number" @bind-value=@State.Size @bind-value:event="onchange"/>
+            </div> *@
+            <div class="container d-grid gap-3">
+                <div class="form-group">
+                    <label>Enter username:</label>
+                    <input type="text" @bind="_userName" @bind:event="onchange" />
+                    <button class="btn btn-primary" @onclick="JoinGameClick" disabled="@_joined">Join Game</button>
+                    <button class="btn btn-success" @onclick="ReadyClick" disabled="@(!_joined)">Ready!</button>
+                </div>
+                <div class="alert @_infoMessageClass" role="alert">
+                    @_infoMessage
+                </div>
+            </div>
+            <Battlefield OnCellClick=OnCellClick></Battlefield>
         </div>
-        <div>
-            <label>Enter username:</label>
-            <input type="text" @bind="_userName" @bind:event="onchange"/>
-            <button @onclick="JoinGameClick" disabled="@_joined">Join Game</button>
-            <button @onclick="ReadyClick" disabled="@(!_joined)">Ready!</button>
-        </div>
-    </div>
-    <div class="col-md-4">
-        <label>Server messages:</label>
-        <div>
-            @if (_serverMessages.Count > 0)
-            {
+        <div class="col-md-4">
+            <label>Server messages:</label>
+            <div>
+                @if (_serverMessages.Count > 0)
+                {
                 <ul>
                     @foreach (var msg in _serverMessages)
                     {
-                        <li>@msg</li>
+                    <li>@msg</li>
                     }
                 </ul>
-            }
-            else
-            {
+                }
+                else
+                {
                 <span>No messages yet</span>
-            }
+                }
+            </div>
         </div>
     </div>
 </div>
-
-<Battlefield OnCellClick=OnCellClick></Battlefield>
 
 @if (_clickPoint is not null)
 {
@@ -51,6 +57,8 @@
 
     private bool _joined = false;
     private string? _userName = null;
+    private string _infoMessage = "Please enter your name and click 'Join Game' button";
+    private string _infoMessageClass = "alert-primary";
     private List<string> _serverMessages = new();
 
 
@@ -95,12 +103,24 @@
             {
                 var action = newTable ? "created" : "joined";
                 var msg = $"{userName} {action} table {tableName}";
-                
+
                 _serverMessages.Add(msg);
-                
+
+                if(action.Equals("created"))
+                {
+                    _infoMessage = "Table is created. Waiting for opponent...";
+                    _infoMessageClass = "alert-warning";
+                    _joined = true;
+                }
+                else
+                {
+                    _infoMessage = $"{userName} joined the game table. Now let's put ships on the battlefield. Click 'Ready' button whenever you are done.";
+                    _infoMessageClass = "alert-info";
+                }
+
                 InvokeAsync(StateHasChanged);
             });
-            
+
             await _hubConnection?.SendAsync("JoinGroup", _userName)!;
         }
     }
