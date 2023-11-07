@@ -1,0 +1,21 @@
+﻿@using SeaBattle.Client.Services
+@inject ILocalStorageService LocalStorage
+
+<CascadingValue Value="PlayerState">
+    <main>
+        @Body
+    </main>
+</CascadingValue>
+
+
+@code {
+    [Parameter]
+    public RenderFragment? Body { get; set; }
+
+    public PlayerState PlayerState { get; set; } = new();
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        var playerId = await LocalStorage.GetItemAsync("user");
+    }
+}
