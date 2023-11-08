@@ -1,58 +1,11 @@
 ﻿@page "/"
-@implements IAsyncDisposable
 @using Microsoft.AspNetCore.SignalR.Client
 @inject NavigationManager Navigation
-@inject BattleState State
 @inject IJSRuntime JsRuntime
 
-<div class="content">
-    <div class="row">
-        <div class="col-md-8">
-            @*         <div>
-            <label for="size">Field size:</label>
-            <input id="size" type="number" @bind-value=@State.Size @bind-value:event="onchange"/>
-            </div> *@
-            <div class="container d-grid gap-3">
-                <div class="form-group">
-                    <label>Enter username:</label>
-                    <input type="text" @bind="_userName" @bind:event="onchange" />
-                    <button class="btn btn-primary" @onclick="JoinGameClick" disabled="@_joined">Join Game</button>
-                    <button class="btn btn-success" @onclick="ReadyClick" disabled="@(!_joined)">Ready!</button>
-                </div>
-                <div class="alert @_infoMessageClass" role="alert">
-                    @_infoMessage
-                </div>
-            </div>
-            <Battlefield OnCellClick=OnCellClick></Battlefield>
-        </div>
-        <div class="col-md-4">
-            <label>Server messages:</label>
-            <div>
-                @if (_serverMessages.Count > 0)
-                {
-                <ul>
-                    @foreach (var msg in _serverMessages)
-                    {
-                    <li>@msg</li>
-                    }
-                </ul>
-                }
-                else
-                {
-                <span>No messages yet</span>
-                }
-            </div>
-        </div>
-    </div>
-</div>
-
-@if (_clickPoint is not null)
-{
-    <h4>Point @_clickPoint.Value was clicked</h4>
-}
+<LoginComponent/>
 
 @code {
-    private HubConnection? _hubConnection;
     private (int x, int y)? _clickPoint = null;
 
     private bool _joined = false;
@@ -61,20 +14,22 @@
     private string _infoMessageClass = "alert-primary";
     private List<string> _serverMessages = new();
 
+    [CascadingParameter]
+    public HubConnection? BattleHub { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
-        _hubConnection = new HubConnectionBuilder()
+        BattleHub = new HubConnectionBuilder()
             .WithUrl(Navigation.ToAbsoluteUri("/battlehub"))
             .Build();
 
-        _hubConnection.On<int, int>("AtackCell", (x, y) =>
+        BattleHub.On<int, int>("AtackCell", (x, y) =>
         {
             _clickPoint = (x, y);
             InvokeAsync(StateHasChanged);
         });
 
-        await _hubConnection.StartAsync();
+        await BattleHub.StartAsync();
     }
 
     #region Hub events
@@ -83,9 +38,9 @@
     {
         _clickPoint = cell;
 
-        if (_hubConnection is not null)
+        if (BattleHub is not null)
         {
-            await _hubConnection.SendAsync("SendMessage", cell.x, cell.y);
+            await BattleHub.SendAsync("SendMessage", cell.x, cell.y);
         }
     }
 
@@ -99,7 +54,7 @@
         }
         else
         {
-            _hubConnection?.On<string, string, bool>("JoinedTable", (userName, tableName, newTable) =>
+            BattleHub?.On<string, string, bool>("JoinedTable", (userName, tableName, newTable) =>
             {
                 var action = newTable ? "created" : "joined";
                 var msg = $"{userName} {action} table {tableName}";
@@ -121,20 +76,11 @@
                 InvokeAsync(StateHasChanged);
             });
 
-            await _hubConnection?.SendAsync("JoinGroup", _userName)!;
+            await BattleHub?.SendAsync("JoinGroup", _userName)!;
         }
     }
 
     private async Task ReadyClick()
     {
     }
-
-    public async ValueTask DisposeAsync()
-    {
-        if (_hubConnection is not null)
-        {
-            await _hubConnection.DisposeAsync();
-        }
-    }
-
 }

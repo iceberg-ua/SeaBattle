@@ -1,10 +1,16 @@
-﻿@using SeaBattle.Client.Services
+﻿@using Microsoft.AspNetCore.SignalR.Client;
+@using SeaBattle.Client.Services
 @inject ILocalStorageService LocalStorage
+@inject NavigationManager Navigation
 
-<CascadingValue Value="PlayerState">
-    <main>
-        @Body
-    </main>
+@implements IAsyncDisposable
+
+<CascadingValue Value="PlayerState" IsFixed=true>
+    <CascadingValue Value="BattleHub" IsFixed=true>
+        <main>
+            @Body
+        </main>
+    </CascadingValue>
 </CascadingValue>
 
 
@@ -13,9 +19,27 @@
     public RenderFragment? Body { get; set; }
 
     public PlayerState PlayerState { get; set; } = new();
+    public HubConnection BattleHub { get; set; }
+
+    protected async override Task OnInitializedAsync()
+    {
+        BattleHub = new HubConnectionBuilder()
+            .WithUrl(Navigation.ToAbsoluteUri("/battlehub"))
+            .Build();
+
+        await BattleHub.StartAsync();
+    }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         var playerId = await LocalStorage.GetItemAsync("user");
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (BattleHub is not null)
+        {
+            await BattleHub.DisposeAsync();
+        }
     }
 }

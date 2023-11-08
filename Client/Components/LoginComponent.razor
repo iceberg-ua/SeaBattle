@@ -1,0 +1,55 @@
+﻿@using Microsoft.AspNetCore.SignalR.Client;
+@inject IJSRuntime JsRuntime
+
+<div class="container centered-form">
+    <div class="text-center">
+        <div class="form-group mb-4">
+            @* <label for="inputField" class="mb-3">Enter your name</label> *@
+            <input type="text" class="form-control" id="inputField" @bind="_userName" placeholder="Enter your name">
+        </div>
+        <button type="submit" class="btn btn-primary btn-block" @onclick="JoinButtonClicked">Join Game</button>
+    </div>
+</div>
+
+@code {
+    private string? _userName = null;
+
+    [CascadingParameter]
+    public HubConnection BattleHub { get; set; }
+
+    public async Task JoinButtonClicked()
+    {
+        if (string.IsNullOrEmpty(_userName))
+        {
+            await JsRuntime.InvokeVoidAsync("alert", "Please enter user name!");
+        }
+        else
+        {
+            BattleHub?.On<string, string, bool>("JoinedTable", (userName, tableName, newTable) =>
+            {
+                var action = newTable ? "created" : "joined";
+                var msg = $"{userName} {action} table {tableName}";
+
+                // _serverMessages.Add(msg);
+
+                // if (action.Equals("created"))
+                // {
+                //     _infoMessage = "Table is created. Waiting for opponent...";
+                //     _infoMessageClass = "alert-warning";
+                //     _joined = true;
+                // }
+                // else
+                // {
+                //     _infoMessage = $"{userName} joined the game table. Now let's put ships on the battlefield. Click 'Ready' button whenever you are done.";
+                //     _infoMessageClass = "alert-info";
+                // }
+
+                JsRuntime.InvokeVoidAsync("alert", $"Hello {userName}");
+
+                InvokeAsync(StateHasChanged);
+            });
+
+            await BattleHub?.SendAsync("JoinGroup", _userName)!;
+        }
+    }
+}
