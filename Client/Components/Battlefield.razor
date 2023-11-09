@@ -1,4 +1,4 @@
-@inject BattleState State
+@inject GameState State
 
 <div class="container">
     <h3>Battlefield size: @State.Size</h3>
@@ -19,6 +19,7 @@
 </div>
 
 @code {
+
     [Parameter]
     public EventCallback<(int, int)> OnCellClick { get; set; }
 

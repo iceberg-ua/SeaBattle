@@ -1,33 +1,13 @@
-namespace SeaBattle.Shared;
+﻿namespace SeaBattle.Shared;
 
 public enum CellState { empty = 0, hit, miss, ship }
 
 public class BattleState
 {
-    private int _size = 10;
-    private int[,] _ownFleet;
-
-    public BattleState()
+    public BattleState(GameState gameState)
     {
-        InitBattleField(_size);
+        BattleField = new int[gameState.Size, gameState.Size];
     }
 
-    public bool InProgress { get; set; } = false;
-
-    public int Size
-    {
-        get { return _size; }
-        set
-        {
-            _size = value;
-            InitBattleField(_size);
-        }
-    }
-
-    public int[,] OwnFleet
-    {
-        get => _ownFleet;
-    }
-
-    public void InitBattleField(int size) => _ownFleet = new int[size, size];
+    public int[,] BattleField { get; set; }
 }

@@ -1,6 +1,6 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.0.0
+# Visual Studio Version 17
+VisualStudioVersion = 17.7.34221.43
 MinimumVisualStudioVersion = 16.0.0.0
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SeaBattle.Server", "Server\SeaBattle.Server.csproj", "{F153EBE4-C5F9-4DFC-88DE-06466BD89D37}"
 EndProject
@@ -18,18 +18,6 @@ Global
 		Release|x86 = Release|x86
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{32EED1CC-390D-4415-ACAC-6352EDBB267C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{32EED1CC-390D-4415-ACAC-6352EDBB267C}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{32EED1CC-390D-4415-ACAC-6352EDBB267C}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{32EED1CC-390D-4415-ACAC-6352EDBB267C}.Debug|x64.Build.0 = Debug|Any CPU
-		{32EED1CC-390D-4415-ACAC-6352EDBB267C}.Debug|x86.ActiveCfg = Debug|Any CPU
-		{32EED1CC-390D-4415-ACAC-6352EDBB267C}.Debug|x86.Build.0 = Debug|Any CPU
-		{32EED1CC-390D-4415-ACAC-6352EDBB267C}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{32EED1CC-390D-4415-ACAC-6352EDBB267C}.Release|Any CPU.Build.0 = Release|Any CPU
-		{32EED1CC-390D-4415-ACAC-6352EDBB267C}.Release|x64.ActiveCfg = Release|Any CPU
-		{32EED1CC-390D-4415-ACAC-6352EDBB267C}.Release|x64.Build.0 = Release|Any CPU
-		{32EED1CC-390D-4415-ACAC-6352EDBB267C}.Release|x86.ActiveCfg = Release|Any CPU
-		{32EED1CC-390D-4415-ACAC-6352EDBB267C}.Release|x86.Build.0 = Release|Any CPU
 		{F153EBE4-C5F9-4DFC-88DE-06466BD89D37}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{F153EBE4-C5F9-4DFC-88DE-06466BD89D37}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F153EBE4-C5F9-4DFC-88DE-06466BD89D37}.Debug|x64.ActiveCfg = Debug|Any CPU
@@ -42,6 +30,18 @@ Global
 		{F153EBE4-C5F9-4DFC-88DE-06466BD89D37}.Release|x64.Build.0 = Release|Any CPU
 		{F153EBE4-C5F9-4DFC-88DE-06466BD89D37}.Release|x86.ActiveCfg = Release|Any CPU
 		{F153EBE4-C5F9-4DFC-88DE-06466BD89D37}.Release|x86.Build.0 = Release|Any CPU
+		{32EED1CC-390D-4415-ACAC-6352EDBB267C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{32EED1CC-390D-4415-ACAC-6352EDBB267C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{32EED1CC-390D-4415-ACAC-6352EDBB267C}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{32EED1CC-390D-4415-ACAC-6352EDBB267C}.Debug|x64.Build.0 = Debug|Any CPU
+		{32EED1CC-390D-4415-ACAC-6352EDBB267C}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{32EED1CC-390D-4415-ACAC-6352EDBB267C}.Debug|x86.Build.0 = Debug|Any CPU
+		{32EED1CC-390D-4415-ACAC-6352EDBB267C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{32EED1CC-390D-4415-ACAC-6352EDBB267C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{32EED1CC-390D-4415-ACAC-6352EDBB267C}.Release|x64.ActiveCfg = Release|Any CPU
+		{32EED1CC-390D-4415-ACAC-6352EDBB267C}.Release|x64.Build.0 = Release|Any CPU
+		{32EED1CC-390D-4415-ACAC-6352EDBB267C}.Release|x86.ActiveCfg = Release|Any CPU
+		{32EED1CC-390D-4415-ACAC-6352EDBB267C}.Release|x86.Build.0 = Release|Any CPU
 		{38B94323-355D-4981-9BAA-CFFD68DCE84F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{38B94323-355D-4981-9BAA-CFFD68DCE84F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{38B94323-355D-4981-9BAA-CFFD68DCE84F}.Debug|x64.ActiveCfg = Debug|Any CPU
