@@ -3,84 +3,36 @@
 @inject NavigationManager Navigation
 @inject IJSRuntime JsRuntime
 
-<LoginComponent/>
+<div class="container centered-form">
+    <LoginComponent OnJoinButtonClick="JoinButtonClicked" />
+
+    <div class="text-center mt-3">
+        @if (!string.IsNullOrEmpty(_infoMessage))
+        {
+            <label class="alert @_infoMessageClass">@_infoMessage</label>
+        }
+    </div>
+</div>
 
 @code {
-    private (int x, int y)? _clickPoint = null;
-
-    private bool _joined = false;
-    private string? _userName = null;
-    private string _infoMessage = "Please enter your name and click 'Join Game' button";
-    private string _infoMessageClass = "alert-primary";
-    private List<string> _serverMessages = new();
-
     [CascadingParameter]
-    public HubConnection? BattleHub { get; set; }
+    public HubConnection BattleHub { get; set; }
 
-    protected override async Task OnInitializedAsync()
+    private string? _infoMessage = null;
+    private string _infoMessageClass = "alert-success";
+
+    public async Task JoinButtonClicked(string userName)
     {
-        BattleHub = new HubConnectionBuilder()
-            .WithUrl(Navigation.ToAbsoluteUri("/battlehub"))
-            .Build();
-
-        BattleHub.On<int, int>("AtackCell", (x, y) =>
+        BattleHub?.On<string, string, bool>("JoinedTable", (userName, tableName, newTable) =>
         {
-            _clickPoint = (x, y);
+            var action = newTable ? "created" : "joined";
+            var msg = $"{userName} {action} table {tableName}";
+
+            _infoMessage = msg;
+
             InvokeAsync(StateHasChanged);
         });
 
-        await BattleHub.StartAsync();
-    }
-
-    #region Hub events
-
-    private async Task OnCellClick((int x, int y) cell)
-    {
-        _clickPoint = cell;
-
-        if (BattleHub is not null)
-        {
-            await BattleHub.SendAsync("SendMessage", cell.x, cell.y);
-        }
-    }
-
-    #endregion
-
-    private async Task JoinGameClick()
-    {
-        if (string.IsNullOrEmpty(_userName))
-        {
-            await JsRuntime.InvokeVoidAsync("alert", "Please enter user name!");
-        }
-        else
-        {
-            BattleHub?.On<string, string, bool>("JoinedTable", (userName, tableName, newTable) =>
-            {
-                var action = newTable ? "created" : "joined";
-                var msg = $"{userName} {action} table {tableName}";
-
-                _serverMessages.Add(msg);
-
-                if(action.Equals("created"))
-                {
-                    _infoMessage = "Table is created. Waiting for opponent...";
-                    _infoMessageClass = "alert-warning";
-                    _joined = true;
-                }
-                else
-                {
-                    _infoMessage = $"{userName} joined the game table. Now let's put ships on the battlefield. Click 'Ready' button whenever you are done.";
-                    _infoMessageClass = "alert-info";
-                }
-
-                InvokeAsync(StateHasChanged);
-            });
-
-            await BattleHub?.SendAsync("JoinGroup", _userName)!;
-        }
-    }
-
-    private async Task ReadyClick()
-    {
+        await BattleHub?.SendAsync("JoinGroup", userName)!;
     }
 }

@@ -44,4 +44,8 @@ app.MapControllers();
 app.MapHub<BattleHub>("/battlehub");
 app.MapFallbackToFile("index.html");
 
+#if DEBUG
+    app.UseWebAssemblyDebugging();
+#endif
+
 app.Run();
