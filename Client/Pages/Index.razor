@@ -1,7 +1,9 @@
 ﻿@page "/"
 @using Microsoft.AspNetCore.SignalR.Client
-@inject NavigationManager Navigation
+@using SeaBattle.Client.Services;
+
 @inject IJSRuntime JsRuntime
+@inject ILocalStorageService Storage
 
 <div class="container centered-form">
     <LoginComponent OnJoinButtonClick="JoinButtonClicked" />
@@ -23,13 +25,15 @@
 
     public async Task JoinButtonClicked(string userName)
     {
-        BattleHub?.On<string, string, bool>("JoinedTable", (userName, tableName, newTable) =>
+        BattleHub?.On<string, string, bool>("JoinedTable", (userName, tableId, newTable) =>
         {
             var action = newTable ? "created" : "joined";
-            var msg = $"{userName} {action} table {tableName}";
+            var msg = $"{userName} {action} table {tableId}";
 
             _infoMessage = msg;
 
+            Storage.SetItemAsync("table", tableId);
+            Storage.SetItemAsync("user", userName);
             InvokeAsync(StateHasChanged);
         });
 
