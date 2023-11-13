@@ -6,7 +6,10 @@
 @inject ILocalStorageService Storage
 
 <div class="container centered-form">
-    <LoginComponent OnJoinButtonClick="JoinButtonClicked" />
+    @if (!PlayerState.IsLoggedIn)
+    {
+        <LoginComponent OnJoinButtonClick="JoinButtonClicked" />
+    }
 
     <div class="text-center mt-3">
         @if (!string.IsNullOrEmpty(_infoMessage))
@@ -18,10 +21,24 @@
 
 @code {
     [CascadingParameter]
-    public HubConnection BattleHub { get; set; }
+    public HubConnection BattleHub { get; set; } = default!;
+
+    [CascadingParameter]
+    public PlayerState PlayerState { get; set; } = default!;
 
     private string? _infoMessage = null;
     private string _infoMessageClass = "alert-success";
+
+    protected override Task OnInitializedAsync()
+    {
+        if (PlayerState.IsLoggedIn)
+        {
+            _infoMessage = $"You are logged in as {PlayerState.Name}. And Table ID is {PlayerState.TableId}";
+            _infoMessageClass = "alert-info";
+        }
+
+        return base.OnInitializedAsync();
+    }
 
     public async Task JoinButtonClicked(string userName)
     {

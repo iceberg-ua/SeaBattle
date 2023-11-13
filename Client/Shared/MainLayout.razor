@@ -8,7 +8,10 @@
 <CascadingValue Value="PlayerState" IsFixed=true>
     <CascadingValue Value="BattleHub" IsFixed=true>
         <main>
-            @Body
+            @if(PlayerState is not null)
+            {
+                @Body
+            }
         </main>
     </CascadingValue>
 </CascadingValue>
@@ -18,8 +21,23 @@
     [Parameter]
     public RenderFragment? Body { get; set; }
 
-    public PlayerState PlayerState { get; set; } = new();
-    public HubConnection BattleHub { get; set; }
+    public PlayerState? PlayerState { get; private set; }
+    public HubConnection BattleHub { get; private set; } = default!;
+
+    private async Task InitPlayerState()
+    {
+        var tableId = await LocalStorage.GetItemAsync("table");
+        var userName = await LocalStorage.GetItemAsync("user");
+
+        PlayerState = new();
+
+        if (Guid.TryParse(tableId, out Guid tableGuid) && !string.IsNullOrEmpty(userName))
+        {
+            PlayerState.TableId = tableGuid;
+            PlayerState.Name = userName;
+            PlayerState.IsLoggedIn = true;
+        }
+    }
 
     protected async override Task OnInitializedAsync()
     {
@@ -32,7 +50,11 @@
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        var playerId = await LocalStorage.GetItemAsync("user");
+        if(firstRender)
+        {
+            await InitPlayerState();
+            StateHasChanged();
+        }
     }
 
     public async ValueTask DisposeAsync()

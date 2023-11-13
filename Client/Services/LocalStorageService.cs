@@ -13,13 +13,11 @@ public class LocalStorageService : ILocalStorageService
 
     public async Task SetItemAsync(string key, object value)
     {
-        await _jsRuntime.InvokeAsync<Guid>("localStorage.setItem", key, value.ToString());
+        await _jsRuntime.InvokeAsync<string>("localStorage.setItem", key, value.ToString());
     }
 
-    public async Task<Guid> GetItemAsync(string key)
+    public async Task<string> GetItemAsync(string key)
     {
-        var value = await _jsRuntime.InvokeAsync<string>("localStorage.getItem", key);
-
-        return Guid.TryParse(value, out Guid result) ? result : Guid.Empty;
+        return await _jsRuntime.InvokeAsync<string>("localStorage.getItem", key);
     }
 }
