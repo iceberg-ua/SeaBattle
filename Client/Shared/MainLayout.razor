@@ -6,12 +6,9 @@
 @implements IAsyncDisposable
 
 <CascadingValue Value="PlayerState" IsFixed=true>
-    <CascadingValue Value="BattleHub" IsFixed=true>
+    <CascadingValue Value="BattleHub">
         <main>
-            @if(PlayerState is not null)
-            {
-                @Body
-            }
+            @Body
         </main>
     </CascadingValue>
 </CascadingValue>
@@ -29,13 +26,9 @@
         var tableId = await LocalStorage.GetItemAsync("table");
         var userName = await LocalStorage.GetItemAsync("user");
 
-        PlayerState = new();
-
         if (Guid.TryParse(tableId, out Guid tableGuid) && !string.IsNullOrEmpty(userName))
         {
-            PlayerState.TableId = tableGuid;
-            PlayerState.Name = userName;
-            PlayerState.IsLoggedIn = true;
+            
         }
     }
 

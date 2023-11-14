@@ -9,6 +9,8 @@ public class GameState
 
     public Guid ID { get; }
 
+    public int Size { get; } = 10;
+
     private bool _isNew = true;
 
     public bool IsNew 
@@ -21,17 +23,19 @@ public class GameState
         } 
     }
 
-    public bool InProgress { get; set; } = false;
+    public bool InProgress { get; private set; } = false;
 
-    public int Size { get; set; } = 10;
+    public bool Finished => Winner is not null;
 
-    public List<string> Opponents { get; } = new(2);
+    public Dictionary<string, PlayerState> Players { get; set; } = new(2);
+
+    public string? Winner { get; private set; } = null;
 
     public void AddPlayer(string username)
     {
-        if (Opponents.Count >= 2)
+        if (Players.Count >= 2)
             throw new Exception("There can be only two players in the game");
 
-        Opponents.Add(username);
+        Players.Add(username, new PlayerState(username, ID));
     }
 }

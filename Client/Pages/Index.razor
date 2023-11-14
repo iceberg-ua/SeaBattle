@@ -6,7 +6,7 @@
 @inject ILocalStorageService Storage
 
 <div class="container centered-form">
-    @if (!PlayerState.IsLoggedIn)
+    @if (PlayerState is null)
     {
         <LoginComponent OnJoinButtonClick="JoinButtonClicked" />
     }
@@ -29,16 +29,16 @@
     private string? _infoMessage = null;
     private string _infoMessageClass = "alert-success";
 
-    protected override Task OnInitializedAsync()
-    {
-        if (PlayerState.IsLoggedIn)
-        {
-            _infoMessage = $"You are logged in as {PlayerState.Name}. And Table ID is {PlayerState.TableId}";
-            _infoMessageClass = "alert-info";
-        }
+    // protected override Task OnInitializedAsync()
+    // {
+    //     if (PlayerState.IsLoggedIn)
+    //     {
+    //         _infoMessage = $"You are logged in as {PlayerState.Name}. And Table ID is {PlayerState.TableId}";
+    //         _infoMessageClass = "alert-info";
+    //     }
 
-        return base.OnInitializedAsync();
-    }
+    //     return base.OnInitializedAsync();
+    // }
 
     public async Task JoinButtonClicked(string userName)
     {
@@ -51,6 +51,7 @@
 
             Storage.SetItemAsync("table", tableId);
             Storage.SetItemAsync("user", userName);
+
             InvokeAsync(StateHasChanged);
         });
 

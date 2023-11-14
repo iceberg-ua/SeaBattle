@@ -2,11 +2,18 @@
 
 public class PlayerState
 {
-    public string Name { get; set; } = default!;
+    public PlayerState(string name, Guid tableId)
+    {
+        Name = name;
+        TableId = tableId;
+    }
+    public Guid TableId { get; }
 
-    public Guid TableId { get; set; }
-
-    public bool IsLoggedIn { get; set; } = false;
+    public string Name { get; } = default!;
 
     public bool InProgress { get; set; } = false;
+
+    public int[,] Armada { get; } = new int[10, 10];
+
+    public List<(int, int)> Shots { get; } = new(100);
 }
