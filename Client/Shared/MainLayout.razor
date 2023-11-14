@@ -1,5 +1,6 @@
 ﻿@using Microsoft.AspNetCore.SignalR.Client;
 @using SeaBattle.Client.Services
+@using SeaBattle.Shared.Hub;
 @inject ILocalStorageService LocalStorage
 @inject NavigationManager Navigation
 
@@ -21,34 +22,50 @@
     public PlayerState? PlayerState { get; private set; }
     public HubConnection BattleHub { get; private set; } = default!;
 
-    private async Task InitPlayerState()
-    {
-        var tableId = await LocalStorage.GetItemAsync("table");
-        var userName = await LocalStorage.GetItemAsync("user");
-
-        if (Guid.TryParse(tableId, out Guid tableGuid) && !string.IsNullOrEmpty(userName))
-        {
-            
-        }
-    }
-
     protected async override Task OnInitializedAsync()
     {
         BattleHub = new HubConnectionBuilder()
             .WithUrl(Navigation.ToAbsoluteUri("/battlehub"))
             .Build();
 
+        BattleHub.On<PlayerState>(nameof(IGameHub.JoinedGame), JoinedGame);
+
         await BattleHub.StartAsync();
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if(firstRender)
+        if (firstRender)
         {
-            await InitPlayerState();
+            await TryGetPlayerState();
             StateHasChanged();
         }
     }
+
+    #region Hub Handlers
+
+    void JoinedGame(PlayerState state)
+    {
+        LocalStorage.SetItemAsync("table", state.TableId);
+        LocalStorage.SetItemAsync("user", state.Name);
+
+        PlayerState = state;
+
+        InvokeAsync(StateHasChanged);
+    }
+
+    private async Task TryGetPlayerState()
+    {
+        var gameId = await LocalStorage.GetItemAsync("table");
+        var userName = await LocalStorage.GetItemAsync("user");
+
+        if (Guid.TryParse(gameId, out Guid gameGuid) && !string.IsNullOrEmpty(userName))
+        {
+
+        }
+    }
+
+    #endregion
 
     public async ValueTask DisposeAsync()
     {

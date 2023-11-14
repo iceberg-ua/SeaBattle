@@ -13,7 +13,7 @@ public class PlayerState
 
     public bool InProgress { get; set; } = false;
 
-    public int[,] Armada { get; } = new int[10, 10];
+    public int[] Armada { get; } = new int[100];
 
     public List<(int, int)> Shots { get; } = new(100);
 }

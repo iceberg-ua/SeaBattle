@@ -11,18 +11,6 @@ public class GameState
 
     public int Size { get; } = 10;
 
-    private bool _isNew = true;
-
-    public bool IsNew 
-    { 
-        get => _isNew;
-        set
-        {
-            if (_isNew)
-                _isNew = value;
-        } 
-    }
-
     public bool InProgress { get; private set; } = false;
 
     public bool Finished => Winner is not null;
@@ -31,11 +19,15 @@ public class GameState
 
     public string? Winner { get; private set; } = null;
 
-    public void AddPlayer(string username)
+    public PlayerState AddPlayer(string playerName)
     {
         if (Players.Count >= 2)
             throw new Exception("There can be only two players in the game");
 
-        Players.Add(username, new PlayerState(username, ID));
+        var playerState = new PlayerState(playerName, ID);
+
+        Players.Add(playerName, playerState);
+
+        return playerState;
     }
 }

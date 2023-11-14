@@ -1,6 +1,7 @@
 ﻿@page "/"
 @using Microsoft.AspNetCore.SignalR.Client
 @using SeaBattle.Client.Services;
+@using SeaBattle.Shared.Hub;
 
 @inject IJSRuntime JsRuntime
 @inject ILocalStorageService Storage
@@ -9,6 +10,12 @@
     @if (PlayerState is null)
     {
         <LoginComponent OnJoinButtonClick="JoinButtonClicked" />
+    }
+    else
+    {
+        <div class="alert alert-info">
+            <b>@PlayerState.Name</b> is in the game <i>@PlayerState.TableId</i>
+        </div>
     }
 
     <div class="text-center mt-3">
@@ -29,32 +36,8 @@
     private string? _infoMessage = null;
     private string _infoMessageClass = "alert-success";
 
-    // protected override Task OnInitializedAsync()
-    // {
-    //     if (PlayerState.IsLoggedIn)
-    //     {
-    //         _infoMessage = $"You are logged in as {PlayerState.Name}. And Table ID is {PlayerState.TableId}";
-    //         _infoMessageClass = "alert-info";
-    //     }
-
-    //     return base.OnInitializedAsync();
-    // }
-
     public async Task JoinButtonClicked(string userName)
     {
-        BattleHub?.On<string, string, bool>("JoinedTable", (userName, tableId, newTable) =>
-        {
-            var action = newTable ? "created" : "joined";
-            var msg = $"{userName} {action} table {tableId}";
-
-            _infoMessage = msg;
-
-            Storage.SetItemAsync("table", tableId);
-            Storage.SetItemAsync("user", userName);
-
-            InvokeAsync(StateHasChanged);
-        });
-
-        await BattleHub?.SendAsync("JoinGroup", userName)!;
+        await BattleHub?.SendAsync(nameof(IGameHub.JoinGame), Guid.Empty, userName)!;
     }
 }
