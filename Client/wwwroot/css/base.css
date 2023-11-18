@@ -13,3 +13,8 @@
     color: darkslategrey;
     font-family: 'Allerta Stencil', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
 }
+
+.btn {
+    font-size: 24px;
+    font-family: 'Allerta Stencil', sans-serif;
+}
