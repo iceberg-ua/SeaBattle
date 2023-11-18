@@ -13,17 +13,18 @@
     }
     else
     {
-        <div class="alert alert-info">
-            <b>@PlayerState.Name</b> is in the game <i>@PlayerState.TableId</i>
+        <div class="text-center mb-3">
+            <b>@PlayerState.Name</b>
+            <br/>
+            <label>Welcome to the Sea Battle</label>
+        </div>
+        <div>
+            <div class="text-center mb-1">
+                Now postion your ships
+            </div>
+            <Battlefield></Battlefield>
         </div>
     }
-
-    <div class="text-center mt-3">
-        @if (!string.IsNullOrEmpty(_infoMessage))
-        {
-            <label class="alert @_infoMessageClass">@_infoMessage</label>
-        }
-    </div>
 </div>
 
 @code {
@@ -33,8 +34,8 @@
     [CascadingParameter]
     public PlayerState PlayerState { get; set; } = default!;
 
-    private string? _infoMessage = null;
-    private string _infoMessageClass = "alert-success";
+    // private string? _infoMessage = null;
+    // private string _infoMessageClass = "alert-success";
 
     public async Task JoinButtonClicked(string userName)
     {

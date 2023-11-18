@@ -1,5 +1,3 @@
-@inject BattleState BattleState
-
 <div class="@CssClass" disabled="true" @onmousedown=CellClick>
 
 </div>
@@ -14,15 +12,15 @@
     [Parameter]
     public EventCallback<(int, int)> Clicked { get; set; }
 
-    public CellState State { get => (CellState)BattleState.BattleField[X,Y]; }
+    // public CellState State { get => (CellState)BattleState.BattleField[X,Y]; }
 
     public string CssClass => $"sea-cell {CssState}";
 
-    private string CssState => Enum.GetName<CellState>(State)!;
+    private string CssState => "";
 
     private async void CellClick()
     {
-        BattleState.BattleField[X, Y] = 1;
+        // BattleState.BattleField[X, Y] = 1;
         await Clicked.InvokeAsync((X, Y));
     }
 }

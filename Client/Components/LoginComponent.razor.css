@@ -1,11 +1,4 @@
-﻿/* Increase the font size and use "Roboto" */
-.text-center label {
-    font-size: 20px;
-    color: darkslategrey;
-    font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
-}
-
-.form-control {
+﻿.form-control {
     font-size: 24px;
     font-family: 'Allerta Stencil', sans-serif;
 }

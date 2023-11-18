@@ -1,13 +1,9 @@
-@inject GameState State
-
 <div class="container">
-    <h3>Battlefield size: @State.Size</h3>
-
     <table>
-        @for (int i = 0; i < State.Size; i++)
+        @for (int i = 0; i < 10; i++)
         {
             <tr>
-                @for (int j = 0; j < State.Size; j++)
+                @for (int j = 0; j < 10; j++)
                 {
                     <th>
                         <SeaCell X=i Y=j Clicked=CellClicked></SeaCell>
@@ -19,6 +15,9 @@
 </div>
 
 @code {
+
+    [CascadingParameter]
+    public PlayerState PlayerState { get; set; } = default!;
 
     [Parameter]
     public EventCallback<(int, int)> OnCellClick { get; set; }

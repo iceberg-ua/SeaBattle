@@ -6,3 +6,10 @@
     justify-content: center;
     height: 100vh;
 }
+
+/* Increase the font size and use "Roboto" */
+.text-center label {
+    font-size: 20px;
+    color: darkslategrey;
+    font-family: 'Allerta Stencil', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
+}
