@@ -6,7 +6,7 @@
 }
 
 .sea-cell:hover {
-    background-color: aquamarine;
+    background-color: darkorange;
 }
 
 .sea-cell.hit {
@@ -18,5 +18,9 @@
 }
 
 .sea-cell.ship {
-    background-color: brown;
+    background-color: black;
 }
+
+    .sea-cell.ship:hover {
+        background-color: brown;
+    }

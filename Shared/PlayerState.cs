@@ -2,18 +2,27 @@
 
 public class PlayerState
 {
-    public PlayerState(string name, Guid tableId)
+    private readonly int _fieldSize;
+
+    public PlayerState(string name, Guid tableId, int fieldSize = 10)
     {
+        _fieldSize = fieldSize;
+
         Name = name;
         TableId = tableId;
+
+        Armada = new CellState[_fieldSize * _fieldSize];
+        Shots = new(_fieldSize * _fieldSize);
     }
     public Guid TableId { get; }
 
     public string Name { get; } = default!;
 
+    public int FieldSize => _fieldSize;
+
     public bool InProgress { get; set; } = false;
 
-    public int[] Armada { get; } = new int[100];
+    public CellState[] Armada { get; }
 
-    public List<(int, int)> Shots { get; } = new(100);
+    public Stack<(int, int)> Shots { get; }
 }

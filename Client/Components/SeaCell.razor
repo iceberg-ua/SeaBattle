@@ -12,15 +12,15 @@
     [Parameter]
     public EventCallback<(int, int)> Clicked { get; set; }
 
-    // public CellState State { get => (CellState)BattleState.BattleField[X,Y]; }
+    [Parameter]
+    public CellState State { get; set; } = CellState.empty;
 
     public string CssClass => $"sea-cell {CssState}";
 
-    private string CssState => "";
+    private string CssState => State.ToString();
 
     private async void CellClick()
     {
-        // BattleState.BattleField[X, Y] = 1;
         await Clicked.InvokeAsync((X, Y));
     }
 }

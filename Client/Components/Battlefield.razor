@@ -1,13 +1,13 @@
 <div class="container">
     <table>
-        @for (int i = 0; i < 10; i++)
+        @for (int i = 0; i < PlayerState.FieldSize; i++)
         {
             <tr>
-                @for (int j = 0; j < 10; j++)
+                @for (int j = 0; j < PlayerState.FieldSize; j++)
                 {
-                    <th>
-                        <SeaCell X=i Y=j Clicked=CellClicked></SeaCell>
-                    </th>
+                    <td>
+                        <SeaCell X=i Y=j Clicked=CellClicked State="PlayerState.Armada[i * 10 + j]"></SeaCell>
+                    </td>
                 }
             </tr>
         }
@@ -19,11 +19,11 @@
     [CascadingParameter]
     public PlayerState PlayerState { get; set; } = default!;
 
-    [Parameter]
-    public EventCallback<(int, int)> OnCellClick { get; set; }
-
     public void CellClicked((int x, int y) cell)
     {
-        OnCellClick.InvokeAsync(cell);
+        if(!PlayerState.InProgress)
+        {
+            PlayerState.Armada[cell.x * 10 + cell.y] = CellState.ship;
+        }
     }
 }

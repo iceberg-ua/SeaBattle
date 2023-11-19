@@ -1,6 +1,6 @@
 ﻿namespace SeaBattle.Shared;
 
-public enum CellState { empty = 0, hit, miss, ship }
+public enum CellState { empty = 0, ship, hit, miss }
 
 public class BattleState
 {
