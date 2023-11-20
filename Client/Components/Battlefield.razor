@@ -6,7 +6,7 @@
                 @for (int j = 0; j < PlayerState.FieldSize; j++)
                 {
                     <td>
-                        <SeaCell X=i Y=j Clicked=CellClicked State="PlayerState.Armada[i * 10 + j]"></SeaCell>
+                        <SeaCell X=i Y=j Clicked=CellClicked State="(CellState)PlayerState.Armada[i * 10 + j]"></SeaCell>
                     </td>
                 }
             </tr>
@@ -21,9 +21,6 @@
 
     public void CellClicked((int x, int y) cell)
     {
-        if(!PlayerState.InProgress)
-        {
-            PlayerState.Armada[cell.x * 10 + cell.y] = CellState.ship;
-        }
+        PlayerState.TryToUpdateState(cell.x, cell.y);
     }
 }
