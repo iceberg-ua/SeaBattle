@@ -14,6 +14,9 @@ public class PlayerState
         Armada = new CellState[_fieldSize * _fieldSize];
         Shots = new(_fieldSize * _fieldSize);
     }
+
+    #region Properties
+
     public Guid TableId { get; }
 
     public string Name { get; } = default!;
@@ -25,4 +28,17 @@ public class PlayerState
     public CellState[] Armada { get; }
 
     public Stack<(int, int)> Shots { get; }
+
+    #endregion
+
+    public bool TryToUpdateState(int x, int y)
+    {
+        if (!InProgress)
+        {
+            var value = Armada[x * 10 + y] == CellState.ship ? CellState.empty : CellState.ship;
+            Armada[x * 10 + y] = value;
+        }
+
+        return true;
+    }
 }
