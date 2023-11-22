@@ -40,7 +40,11 @@ public class PlayerState
         if (!InProgress)
         {
             if (GetCell(x, y) == CellState.ship)
+            {
+                var ship = _ships.Where(s => s.Contains((x, y))).FirstOrDefault();
+                ship?.Remove((x, y));
                 SetCell(x, y, CellState.empty);
+            }
             else if (CheckFormation(x, y))
                 SetCell(x, y, CellState.ship);
             else
@@ -51,6 +55,9 @@ public class PlayerState
         return true;
     }
 
+    private List<List<(int x, int y)>> _ships = new(10);
+    private bool _full = false;
+
     private bool CheckFormation(int x, int y)
     {
         if (OnDiagonal(x, y))
@@ -58,15 +65,28 @@ public class PlayerState
 
         SetCell(x, y, CellState.ship);
 
-        for (int i = 0; i < FieldSize; i++)
+        return true;
+    }
+
+    private Dictionary<int, int> _shipCounts = new() { { 1, 4 }, { 2, 3 }, { 3, 2 }, { 4, 1 } };
+    private readonly int _maxShipSize = 4;
+
+    private bool CheckShipCount()
+    {
+        var shipGroups = _ships.Select(s => s.Count).GroupBy(s => s).OrderBy(g => g.Key);
+        bool full = false;
+       
+        foreach (var group in shipGroups)
         {
-            for (int j = 0; j < FieldSize; j++)
-            {
-                //if( GetCell(x, y) == CellState.Deck)
-                //    CheckShip(i, j);
-            }
+            if (_shipCounts[group.Key] == group.Count())
+                full = true;
+            else if (_shipCounts[group.Key] < group.Count())
+                full = false;
+            else
+                return false;
         }
 
+        _full = full;
         return true;
     }
 
