@@ -52,24 +52,23 @@ public class PlayerState
 
         }
 
-        return true;
+        return false;
     }
 
-    private List<List<(int x, int y)>> _ships = new(10);
+    private readonly int _maxShipSize = 4;
+    private readonly Dictionary<int, int> _shipCounts = new() { { 1, 4 }, { 2, 3 }, { 3, 2 }, { 4, 1 } };
+    private readonly List<List<(int x, int y)>> _ships = new(10);
     private bool _full = false;
 
     private bool CheckFormation(int x, int y)
     {
-        if (OnDiagonal(x, y))
+        if (_full || OnDiagonal(x, y))
             return false;
 
         SetCell(x, y, CellState.ship);
 
         return true;
     }
-
-    private Dictionary<int, int> _shipCounts = new() { { 1, 4 }, { 2, 3 }, { 3, 2 }, { 4, 1 } };
-    private readonly int _maxShipSize = 4;
 
     private bool CheckShipCount()
     {
