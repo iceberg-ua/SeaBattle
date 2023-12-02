@@ -57,17 +57,32 @@ public class PlayerState
                                                  ship.Contains((x, y - 1)) ||
                                                  ship.Contains((x, y + 1)));
 
-        if(existingShips.Count() > 1)
+        if (existingShips.Count() > 1)
         {
-            if(existingShips.Sum(s => s.Count) + 1 < 4)
+            if (existingShips.Sum(s => s.Count) + 1 <= 4)
             {
+                var newShip = existingShips.SelectMany(s => s).Concat([(x, y)]).OrderBy(s => s.x).OrderBy(s => s.y).ToList();
+
                 _ships.RemoveAll(s => existingShips.Contains(s));
-
-                var newShip = existingShips.SelectMany(s => s).ToList(); 
+                _ships.Add(newShip);
             }
+            else
+                return false;
         }
+        else if (existingShips.Count() == 1)
+        {
+            var ship = existingShips.First();
 
-        _full = CheckShipsCount();
+            if (ship.Count == 4)
+                return false;
+            
+            ship.Add((x, y));
+        }
+        else
+            _ships.Add([ (x, y) ]);
+
+        //_full = CheckShipsCount();
+
         return true;
     }
 
