@@ -18,3 +18,10 @@
     font-size: 24px;
     font-family: 'Allerta Stencil', sans-serif;
 }
+
+.button-container {
+    display:flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
+}

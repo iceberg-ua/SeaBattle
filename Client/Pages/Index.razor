@@ -23,8 +23,11 @@
             <div class="text-center mb-1">
                 Now postion your ships and press <b>Ready</b> button
             </div>
-            <Battlefield></Battlefield>
-            <button class="btn btn-success mt-3">READY</button>
+            <Battlefield Field="PlayerState.Armada" FieldSize="PlayerState.FieldSize" CellClicked="@CellClicked"></Battlefield>
+            <div class="button-container">
+                <button class="btn btn-danger" disabled="@ClearButtonDisable" @onclick=ClearButtonClicked>Clear</button>
+                <button class="btn btn-success" disabled="true">Ready</button>
+            </div>
         </div>
     }
 </div>
@@ -36,11 +39,20 @@
     [CascadingParameter]
     public PlayerState PlayerState { get; set; } = default!;
 
-    // private string? _infoMessage = null;
-    // private string _infoMessageClass = "alert-success";
+    private bool ClearButtonDisable => PlayerState.Armada.All(c => c == CellState.empty);
 
     public async Task JoinButtonClicked(string userName)
     {
         await BattleHub?.SendAsync(nameof(IGameHub.JoinGame), Guid.Empty, userName)!;
+    }
+
+    public void CellClicked((int x, int y) cell)
+    {
+        PlayerState.TryToUpdateState(cell.x, cell.y);
+    }
+
+    private void ClearButtonClicked(MouseEventArgs e)
+    {
+        PlayerState.ClearField();
     }
 }

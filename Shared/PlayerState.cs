@@ -25,7 +25,7 @@ public class PlayerState
 
     public bool InProgress { get; set; } = false;
 
-    public CellState[] Armada { get; }
+    public CellState[] Armada { get; private set; }
 
     public Stack<(int, int)> Shots { get; }
 
@@ -40,7 +40,6 @@ public class PlayerState
 
     private void SetCell(int x, int y, CellState value) => Armada[x * 10 + y] = value;
 
-    
     /// <summary>
     /// Update the ships on the battlefiled
     /// </summary>
@@ -52,6 +51,7 @@ public class PlayerState
         if (_full || OnDiagonal(x, y))
             return false;
 
+        //check if new point is attached to any of already existing ships
         var existingShips = _ships.Where(ship => ship.Contains((x - 1, y)) ||
                                                  ship.Contains((x + 1, y)) ||
                                                  ship.Contains((x, y - 1)) ||
@@ -75,11 +75,11 @@ public class PlayerState
 
             if (ship.Count == 4)
                 return false;
-            
+
             ship.Add((x, y));
         }
         else
-            _ships.Add([ (x, y) ]);
+            _ships.Add([(x, y)]);
 
         //_full = CheckShipsCount();
 
@@ -90,7 +90,7 @@ public class PlayerState
     {
         var shipGroups = _ships.Select(s => s.Count).GroupBy(s => s).OrderBy(g => g.Key);
         bool full = true;
-       
+
         foreach (var group in shipGroups)
         {
             if (_shipCounts[group.Key] == group.Count())
@@ -107,8 +107,8 @@ public class PlayerState
     private bool OnDiagonal(int x, int y) => CellIsOccupied(x - 1, y - 1) || CellIsOccupied(x + 1, y - 1) ||
                                              CellIsOccupied(x - 1, y + 1) || CellIsOccupied(x + 1, y + 1);
 
-    private bool CellIsOccupied(int x, int y) =>  x >= 0 && x < FieldSize &&
-                                                  y >= 0 && y < FieldSize && GetCell(x, y) == CellState.ship;
+    private bool CellIsOccupied(int x, int y) => x >= 0 && x < FieldSize &&
+                                                 y >= 0 && y < FieldSize && GetCell(x, y) == CellState.ship;
 
     public bool TryToUpdateState(int x, int y)
     {
@@ -128,5 +128,11 @@ public class PlayerState
         }
 
         return false;
+    }
+
+    public void ClearField()
+    {
+        _ships.Clear();
+        Armada = new CellState[_fieldSize * _fieldSize];
     }
 }
