@@ -23,7 +23,13 @@
             <div class="text-center mb-1">
                 Now postion your ships and press <b>Ready</b> button
             </div>
-            <Battlefield Field="PlayerState.Armada" FieldSize="PlayerState.FieldSize" CellClicked="@CellClicked"></Battlefield>
+            <div class="field-container">
+                <Battlefield Field="PlayerState.Field" FieldSize="PlayerState.FieldSize" CellClicked="@OwnFieldCellClicked"></Battlefield>
+                @if (PlayerState.InProgress)
+                {
+                    <Battlefield Field="PlayerState.Field" FieldSize="PlayerState.FieldSize" CellClicked="@OwnFieldCellClicked"></Battlefield>
+                }
+            </div>
             <div class="button-container">
                 <button class="btn btn-danger" disabled="@ClearButtonDisable" @onclick=ClearButtonClicked>Clear</button>
                 <button class="btn btn-success" disabled="true">Ready</button>
@@ -39,16 +45,17 @@
     [CascadingParameter]
     public PlayerState PlayerState { get; set; } = default!;
 
-    private bool ClearButtonDisable => PlayerState.Armada.All(c => c == CellState.empty);
+    private bool ClearButtonDisable => PlayerState.Field.All(c => c == CellState.empty);
 
     public async Task JoinButtonClicked(string userName)
     {
         await BattleHub?.SendAsync(nameof(IGameHub.JoinGame), Guid.Empty, userName)!;
     }
 
-    public void CellClicked((int x, int y) cell)
+    public void OwnFieldCellClicked((int x, int y) cell)
     {
-        PlayerState.TryToUpdateState(cell.x, cell.y);
+        if(!PlayerState.InProgress)
+            PlayerState.TryToUpdateState(cell.x, cell.y);
     }
 
     private void ClearButtonClicked(MouseEventArgs e)
