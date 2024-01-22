@@ -8,6 +8,20 @@ public class Fleet
 
     public bool Complete { get; private set; }
 
+    private bool CheckCompletion()
+    {
+        if(Ships.Count != 10)
+            return false;
+
+        foreach (var group in Ships.GroupBy(s => s.Count))
+        {
+            if ((5 - group.Count()) != group.First().Count)
+                return false;
+        }
+
+        return true;
+    }
+
     public bool AddShipDeck(int x, int y)
     {
         if (Complete)
@@ -47,6 +61,8 @@ public class Fleet
         else
             Ships.Add([(x, y)]);
 
+        Complete = CheckCompletion();
+
         return true;
     }
 
@@ -70,6 +86,8 @@ public class Fleet
 
         if (secondPart.Count > 0)
             Ships.Add(new Ship(secondPart));
+
+        Complete = CheckCompletion();
     }
 
     public void Clear()
