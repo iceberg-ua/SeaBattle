@@ -32,7 +32,7 @@
             </div>
             <div class="button-container">
                 <button class="btn btn-danger" disabled="@ClearButtonDisable" @onclick=ClearButtonClicked>Clear</button>
-                <button class="btn btn-success" disabled="true">Ready</button>
+                <button class="btn btn-success" disabled="!@PlayerState.Fleet.Complete">Ready</button>
             </div>
         </div>
     }

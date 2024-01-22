@@ -35,13 +35,13 @@ public class PlayerState
 
     private CellState GetCell(int x, int y) => Field[x * 10 + y];
 
+    private bool CellIsOccupied(int x, int y) => x >= 0 && x < FieldSize &&
+                                                 y >= 0 && y < FieldSize && GetCell(x, y) == CellState.ship;
+
     private void SetCell(int x, int y, CellState value) => Field[x * 10 + y] = value;
 
     private bool OnDiagonal(int x, int y) => CellIsOccupied(x - 1, y - 1) || CellIsOccupied(x + 1, y - 1) ||
                                              CellIsOccupied(x - 1, y + 1) || CellIsOccupied(x + 1, y + 1);
-
-    private bool CellIsOccupied(int x, int y) => x >= 0 && x < FieldSize &&
-                                                 y >= 0 && y < FieldSize && GetCell(x, y) == CellState.ship;
 
     public void TryToUpdateState(int x, int y)
     {
@@ -55,7 +55,7 @@ public class PlayerState
             SetCell(x, y, CellState.ship);
         }
 
-        System.Console.WriteLine(Fleet.Ships.Count);
+        Console.WriteLine(Fleet.Ships.Count);
     }
 
     public void ClearField()
