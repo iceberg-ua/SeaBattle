@@ -93,5 +93,6 @@ public class Fleet
     public void Clear()
     {
         Ships.Clear();
+        Complete = false;
     }
 }

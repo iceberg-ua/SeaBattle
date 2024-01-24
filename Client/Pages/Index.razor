@@ -32,7 +32,7 @@
             </div>
             <div class="button-container">
                 <button class="btn btn-danger" disabled="@ClearButtonDisable" @onclick=ClearButtonClicked>Clear</button>
-                <button class="btn btn-success" disabled="!@PlayerState.Fleet.Complete">Ready</button>
+                <button class="btn btn-success" disabled="@NotReady">Ready</button>
             </div>
         </div>
     }
@@ -46,6 +46,8 @@
     public PlayerState PlayerState { get; set; } = default!;
 
     private bool ClearButtonDisable => PlayerState.Field.All(c => c == CellState.empty);
+
+    private bool NotReady => !PlayerState.Fleet.Complete;
 
     public async Task JoinButtonClicked(string userName)
     {
