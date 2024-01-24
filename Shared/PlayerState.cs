@@ -54,8 +54,6 @@ public class PlayerState
         {
             SetCell(x, y, CellState.ship);
         }
-
-        Console.WriteLine(Fleet.Ships.Count);
     }
 
     public void ClearField()

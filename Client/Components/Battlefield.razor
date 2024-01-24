@@ -1,4 +1,4 @@
-<div class="container">
+<div class="container @Disabled">
     <table>
         @for (int i = 0; i < FieldSize; i++)
         {
@@ -6,7 +6,7 @@
                 @for (int j = 0; j < FieldSize; j++)
                 {
                     <td>
-                        <SeaCell X=i Y=j Clicked=CellClicked State="Field[i * 10 + j]"></SeaCell>
+                        <SeaCell X=i Y=j Clicked=CellClicked State="Field[i * 10 + j]" CssClass="@Disabled"></SeaCell>
                     </td>
                 }
             </tr>
@@ -15,7 +15,7 @@
 </div>
 
 @code {
-
+    
     [CascadingParameter]
     public PlayerState PlayerState { get; set; } = default!;
 
@@ -27,4 +27,6 @@
 
     [Parameter]
     public EventCallback<(int,int)> CellClicked { get; set; }
+
+    private string Disabled => PlayerState.InProgress ? "hover-disabled" : "";
 }
