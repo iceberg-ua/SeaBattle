@@ -1,4 +1,4 @@
-<div class="@CssClass" disabled="true" @onmousedown=CellClick>
+<div class="sea-cell @CssState @CssClass" disabled="true" @onmousedown=CellClick>
 
 </div>
 
@@ -15,7 +15,8 @@
     [Parameter]
     public CellState State { get; set; } = CellState.empty;
 
-    public string CssClass => $"sea-cell {CssState}";
+    [Parameter]
+    public string CssClass { get; set; } = "";
 
     private string CssState => State.ToString();
 
