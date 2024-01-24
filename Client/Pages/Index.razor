@@ -30,10 +30,13 @@
                     <Battlefield Field="PlayerState.Field" FieldSize="PlayerState.FieldSize" CellClicked="@OwnFieldCellClicked"></Battlefield>
                 }
             </div>
-            <div class="button-container">
-                <button class="btn btn-danger" disabled="@ClearButtonDisable" @onclick=ClearButtonClicked>Clear</button>
-                <button class="btn btn-success" disabled="@NotReady">Ready</button>
-            </div>
+            @if (!PlayerState.InProgress)
+            {
+                <div class="button-container">
+                    <button class="btn btn-danger" disabled="@ClearButtonDisable" @onclick=ClearButtonClicked>Clear</button>
+                    <button class="btn btn-success" disabled="@NotReady" @onclick=OnReadyButtonClick>Ready</button>
+                </div>
+            }
         </div>
     }
 </div>
@@ -49,12 +52,12 @@
 
     private bool NotReady => !PlayerState.Fleet.Complete;
 
-    public async Task JoinButtonClicked(string userName)
+    private async Task JoinButtonClicked(string userName)
     {
         await BattleHub?.SendAsync(nameof(IGameHub.JoinGame), Guid.Empty, userName)!;
     }
 
-    public void OwnFieldCellClicked((int x, int y) cell)
+    private void OwnFieldCellClicked((int x, int y) cell)
     {
         if(!PlayerState.InProgress)
             PlayerState.TryToUpdateState(cell.x, cell.y);
@@ -63,5 +66,10 @@
     private void ClearButtonClicked(MouseEventArgs e)
     {
         PlayerState.ClearField();
+    }
+
+    private void OnReadyButtonClick()
+    {
+        PlayerState.InProgress = true;
     }
 }
