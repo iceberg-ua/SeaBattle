@@ -6,18 +6,46 @@ namespace SeaBattle.Server.Hubs;
 
 class BattleHub : Hub<IGameHub>
 {
-    public BattleHub(GlobalStorage storage)
+    public BattleHub(GlobalGameStorage storage)
     {
-        Storage = storage;
+        GameStorage = storage;
     }
 
-    private GlobalStorage Storage { get; } = default!;
+    private GlobalGameStorage GameStorage { get; } = default!;
 
-    public async Task JoinGame(Guid gameId, string playerName)
+    public async Task JoinGame(Guid gameId, Guid playerId, string playerName)
     {
-        PlayerState playerState = Storage.GetGame(gameId).AddPlayer(playerName);
+        Console.WriteLine($"REQUESTED: table - {gameId}, playerId-{playerId}, name - {playerName}");
 
-        await Groups.AddToGroupAsync(Context.ConnectionId, gameId.ToString());
-        await Clients.Caller.JoinedGame(playerState);
+        GameState? gameState = gameId == Guid.Empty ? GameStorage.CreateGame() : 
+                                                      GameStorage.GetGame(gameId);
+
+        if (gameState == null)
+        {
+            Console.WriteLine("Not game found");
+            return;
+        }
+
+        if (!gameState.Players.TryGetValue(playerId, out var playerState) && !string.IsNullOrEmpty(playerName))
+            playerState = gameState.AddPlayer(playerName);
+
+        if (playerState != null)
+        {
+            Console.WriteLine($"Found player state: game - {playerState.TableId}, player - {playerState.PlayerId}");
+            await Groups.AddToGroupAsync(Context.ConnectionId, gameId.ToString());
+            await Clients.Caller.JoinedGame(playerState);
+        }
+    }
+
+    public async Task PlayerReady(Guid gameId, Guid playerId)
+    {
+        var gameState = GameStorage.GetGame(gameId);
+
+        gameState.Players[playerId].Ready = true;
+
+        if(gameState.Players.All(p => p.Value.Ready))
+        {
+            await Clients.Group(gameId.ToString()).GameStarted();
+        }
     }
 }

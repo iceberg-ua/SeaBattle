@@ -5,6 +5,8 @@ public class GameState
     public GameState()
     {
         ID = Guid.NewGuid();
+
+        Console.WriteLine($"Game created: {ID}");
     }
 
     public Guid ID { get; }
@@ -13,11 +15,7 @@ public class GameState
 
     public bool InProgress { get; private set; } = false;
 
-    public bool Finished => Winner is not null;
-
-    public Dictionary<string, PlayerState> Players { get; set; } = new(2);
-
-    public string? Winner { get; private set; } = null;
+    public Dictionary<Guid, PlayerState> Players { get; set; } = new(2);
 
     public PlayerState AddPlayer(string playerName)
     {
@@ -26,7 +24,7 @@ public class GameState
 
         var playerState = new PlayerState(playerName, ID);
 
-        Players.Add(playerName, playerState);
+        Players.Add(playerState.PlayerId, playerState);
 
         return playerState;
     }

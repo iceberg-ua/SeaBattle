@@ -30,14 +30,19 @@
                     <Battlefield Field="PlayerState.Field" FieldSize="PlayerState.FieldSize" CellClicked="@OwnFieldCellClicked"></Battlefield>
                 }
             </div>
-            @if (!PlayerState.InProgress)
+
+            @if (!PlayerState.InProgress && !Waiting)
             {
                 <div class="button-container">
                     <button class="btn btn-danger" disabled="@ClearButtonDisable" @onclick=ClearButtonClicked>Clear</button>
                     <button class="btn btn-success" disabled="@NotReady" @onclick=OnReadyButtonClick>Ready</button>
                 </div>
             }
-        </div>
+            else @if (Waiting)
+            {
+                <h3>Waiting for opponent</h3>
+            }
+    </div>
     }
 </div>
 
@@ -50,12 +55,10 @@
 
     private bool ClearButtonDisable => PlayerState.Field.All(c => c == CellState.empty);
 
-    private bool NotReady => !PlayerState.Fleet.Complete;
+    private bool NotReady => false;
+    // private bool NotReady => !PlayerState.Fleet.Complete;
 
-    private async Task JoinButtonClicked(string userName)
-    {
-        await BattleHub?.SendAsync(nameof(IGameHub.JoinGame), Guid.Empty, userName)!;
-    }
+    private bool Waiting { get; set; } = false;
 
     private void OwnFieldCellClicked((int x, int y) cell)
     {
@@ -68,8 +71,18 @@
         PlayerState.ClearField();
     }
 
-    private void OnReadyButtonClick()
+    #region Hub API
+
+    private async Task JoinButtonClicked(string userName)
     {
-        PlayerState.InProgress = true;
+        await BattleHub?.SendAsync(nameof(IGameHub.JoinGame), Guid.Empty, Guid.Empty,userName)!;
     }
+
+    private async Task OnReadyButtonClick()
+    {
+        Waiting = true;
+        await BattleHub?.SendAsync(nameof(IGameHub.PlayerReady), PlayerState.TableId, PlayerState.PlayerId)!;
+    }
+
+    #endregion
 }

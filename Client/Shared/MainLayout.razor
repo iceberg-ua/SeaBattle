@@ -29,6 +29,7 @@
             .Build();
 
         BattleHub.On<PlayerState>(nameof(IGameHub.JoinedGame), JoinedGame);
+        BattleHub.On(nameof(IGameHub.GameStarted), GameStarted);
 
         await BattleHub.StartAsync();
     }
@@ -44,24 +45,34 @@
 
     #region Hub Handlers
 
-    void JoinedGame(PlayerState state)
+    async Task JoinedGame(PlayerState state)
     {
-        LocalStorage.SetItemAsync("table", state.TableId);
-        LocalStorage.SetItemAsync("user", state.Name);
-
         PlayerState = state;
 
-        InvokeAsync(StateHasChanged);
+        Console.WriteLine($"Got new state: table {PlayerState.TableId}, player {PlayerState.PlayerId}");
+
+        LocalStorage.SetItemAsync("table", PlayerState.TableId);
+        LocalStorage.SetItemAsync("player", PlayerState.PlayerId);
+
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async Task GameStarted()
+    {
+        PlayerState.InProgress = true;
+        await InvokeAsync(StateHasChanged);
     }
 
     private async Task TryGetPlayerState()
     {
         var gameId = await LocalStorage.GetItemAsync("table");
-        var userName = await LocalStorage.GetItemAsync("user");
+        var playerId = await LocalStorage.GetItemAsync("player");
 
-        if (Guid.TryParse(gameId, out Guid gameGuid) && !string.IsNullOrEmpty(userName))
+        if (Guid.TryParse(gameId, out Guid gameGuid) && 
+            Guid.TryParse(playerId, out Guid playerGuid))
         {
-
+            Console.WriteLine($"Request state: table {gameGuid}, player {playerGuid}");
+            await BattleHub?.SendAsync(nameof(IGameHub.JoinGame), gameGuid, playerGuid, "")!;
         }
     }
 

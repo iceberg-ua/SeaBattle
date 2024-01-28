@@ -14,7 +14,7 @@ builder.Services.AddResponseCompression(opts =>
     opts.MimeTypes = ResponseCompressionDefaults.MimeTypes.Concat(
         new[] { "application/octet-stream" });
 });
-builder.Services.AddSingleton<GlobalStorage>();
+builder.Services.AddSingleton<GlobalGameStorage>();
 
 var app = builder.Build();
 

@@ -10,6 +10,7 @@ public class PlayerState
 
         Name = name;
         TableId = tableId;
+        PlayerId = Guid.NewGuid();
 
         Field = new CellState[_fieldSize * _fieldSize];
         Shots = new(_fieldSize * _fieldSize);
@@ -19,11 +20,15 @@ public class PlayerState
 
     public Guid TableId { get; }
 
+    public Guid PlayerId { get; }
+
     public string Name { get; } = default!;
 
     public int FieldSize => _fieldSize;
 
     public bool InProgress { get; set; } = false;
+
+    public bool Ready { get; set; } = false;
 
     public CellState[] Field { get; private set; }
 
