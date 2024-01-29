@@ -29,7 +29,7 @@
             .Build();
 
         BattleHub.On<PlayerState, Guid>(nameof(IGameHub.JoinedGame), JoinedGame);
-        BattleHub.On(nameof(IGameHub.GameStarted), GameStarted);
+        BattleHub.On<Guid>(nameof(IGameHub.GameStarted), GameStarted);
 
         await BattleHub.StartAsync();
     }
@@ -48,6 +48,7 @@
     async Task JoinedGame(PlayerState state, Guid playerId)
     {
         PlayerState = state;
+        PlayerState.PlayerId = playerId;
 
         Console.WriteLine($"Got new state: table {PlayerState.TableId}, player {playerId}");
 
@@ -57,7 +58,7 @@
         await InvokeAsync(StateHasChanged);
     }
 
-    async Task GameStarted()
+    async Task GameStarted(Guid gameId)
     {
         PlayerState.InProgress = true;
         await InvokeAsync(StateHasChanged);

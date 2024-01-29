@@ -20,7 +20,7 @@ public class PlayerState
 
     public Guid TableId { get; }
 
-    public Guid PlayerId { get; }
+    public Guid PlayerId { get; set; }
 
     public string Name { get; } = default!;
 

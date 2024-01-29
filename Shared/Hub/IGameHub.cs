@@ -7,13 +7,19 @@ public interface IGameHub
 
     Task PlayerReady(Guid gameId, Guid playerId);
 
+    Task CellClicked(Guid gameId, Guid playerId, int x, int y);
+
     #endregion
 
     #region Server reponse
 
     Task JoinedGame(PlayerState state, Guid playerId);
 
-    Task GameStarted();
+    Task UpdateCellState(int x, int y, CellState cellState);
+
+    Task StateChanged(bool fleetReady);
+
+    Task GameStarted(Guid gameId);
 
     #endregion
 }

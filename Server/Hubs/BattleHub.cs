@@ -32,7 +32,8 @@ class BattleHub : Hub<IGameHub>
         if (playerState != null)
         {
             Console.WriteLine($"Found player state: game - {playerState.TableId}, player - {playerState.PlayerId}");
-            await Groups.AddToGroupAsync(Context.ConnectionId, gameId.ToString());
+            await Groups.AddToGroupAsync(Context.ConnectionId, playerState.TableId.ToString());
+            Console.WriteLine($"Add connection to Group: {gameId}");
             await Clients.Caller.JoinedGame(playerState, playerState.PlayerId);
         }
     }
@@ -43,9 +44,10 @@ class BattleHub : Hub<IGameHub>
 
         gameState.Players[playerId].Ready = true;
 
-        if(gameState.Players.All(p => p.Value.Ready))
+        if(gameState.Players.Count == 2 && gameState.Players.All(p => p.Value.Ready))
         {
-            await Clients.Group(gameId.ToString()).GameStarted();
+            Console.WriteLine($"Broadcasting to Group: {gameId}");
+            await Clients.Group(gameId.ToString()).GameStarted(gameId);
         }
     }
 }
