@@ -11,7 +11,7 @@ public interface IGameHub
 
     #region Server reponse
 
-    Task JoinedGame(PlayerState state);
+    Task JoinedGame(PlayerState state, Guid playerId);
 
     Task GameStarted();
 

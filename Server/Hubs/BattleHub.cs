@@ -33,7 +33,7 @@ class BattleHub : Hub<IGameHub>
         {
             Console.WriteLine($"Found player state: game - {playerState.TableId}, player - {playerState.PlayerId}");
             await Groups.AddToGroupAsync(Context.ConnectionId, gameId.ToString());
-            await Clients.Caller.JoinedGame(playerState);
+            await Clients.Caller.JoinedGame(playerState, playerState.PlayerId);
         }
     }
 

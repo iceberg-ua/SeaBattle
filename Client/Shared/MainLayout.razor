@@ -28,7 +28,7 @@
             .WithUrl(Navigation.ToAbsoluteUri("/battlehub"))
             .Build();
 
-        BattleHub.On<PlayerState>(nameof(IGameHub.JoinedGame), JoinedGame);
+        BattleHub.On<PlayerState, Guid>(nameof(IGameHub.JoinedGame), JoinedGame);
         BattleHub.On(nameof(IGameHub.GameStarted), GameStarted);
 
         await BattleHub.StartAsync();
@@ -45,14 +45,14 @@
 
     #region Hub Handlers
 
-    async Task JoinedGame(PlayerState state)
+    async Task JoinedGame(PlayerState state, Guid playerId)
     {
         PlayerState = state;
 
-        Console.WriteLine($"Got new state: table {PlayerState.TableId}, player {PlayerState.PlayerId}");
+        Console.WriteLine($"Got new state: table {PlayerState.TableId}, player {playerId}");
 
         LocalStorage.SetItemAsync("table", PlayerState.TableId);
-        LocalStorage.SetItemAsync("player", PlayerState.PlayerId);
+        LocalStorage.SetItemAsync("player", playerId);
 
         await InvokeAsync(StateHasChanged);
     }
