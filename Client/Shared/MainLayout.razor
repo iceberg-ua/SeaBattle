@@ -29,7 +29,6 @@
             .Build();
 
         BattleHub.On<PlayerState, Guid>(nameof(IGameHub.JoinedGame), JoinedGame);
-        BattleHub.On<Guid>(nameof(IGameHub.GameStarted), GameStarted);
 
         await BattleHub.StartAsync();
     }
@@ -55,12 +54,6 @@
         LocalStorage.SetItemAsync("table", PlayerState.TableId);
         LocalStorage.SetItemAsync("player", playerId);
 
-        await InvokeAsync(StateHasChanged);
-    }
-
-    async Task GameStarted(Guid gameId)
-    {
-        PlayerState.InProgress = true;
         await InvokeAsync(StateHasChanged);
     }
 

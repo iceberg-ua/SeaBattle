@@ -33,6 +33,7 @@ class BattleHub : Hub<IGameHub>
         {
             Console.WriteLine($"Found player state: game - {playerState.TableId}, player - {playerState.PlayerId}");
             await Groups.AddToGroupAsync(Context.ConnectionId, playerState.TableId.ToString());
+            await Groups.AddToGroupAsync(Context.ConnectionId, playerState.PlayerId.ToString());
             Console.WriteLine($"Add connection to Group: {gameId}");
             await Clients.Caller.JoinedGame(playerState, playerState.PlayerId);
         }
@@ -49,5 +50,16 @@ class BattleHub : Hub<IGameHub>
             Console.WriteLine($"Broadcasting to Group: {gameId}");
             await Clients.Group(gameId.ToString()).GameStarted(gameId);
         }
+    }
+
+    public async Task CellClicked(Guid gameId, Guid playerId, int x, int y)
+    {
+        var gameState = GameStorage.GetGame(gameId);
+        var opponentState = gameState?.Players.FirstOrDefault(p => p.Key != playerId).Value;
+
+        opponentState.Field[x * 10 + y] = CellState.miss;
+        opponentState.Shots.Push((x, y));
+
+        await Clients.Group(opponentState.PlayerId.ToString()).UpdateCellState(x, y, CellState.miss);
     }
 }

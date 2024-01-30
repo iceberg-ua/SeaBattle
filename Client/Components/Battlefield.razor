@@ -28,5 +28,6 @@
     [Parameter]
     public EventCallback<(int,int)> CellClicked { get; set; }
 
-    private string Disabled => PlayerState.InProgress ? "hover-disabled" : "";
+    // private string Disabled => PlayerState.InProgress ? "hover-disabled" : "";
+    private string Disabled => "";
 }
