@@ -59,7 +59,7 @@
     {
         if(firstRender)
         {
-            BattleHub.On<int, int, CellState>(nameof(IGameHub.UpdateCellState), UpdateOpponentCell);
+            BattleHub.On<int, int, CellState, bool>(nameof(IGameHub.UpdateCellState), UpdateOpponentCell);
             BattleHub.On<Guid>(nameof(IGameHub.GameStarted), GameStarted);
         }
 
@@ -112,9 +112,12 @@
         await InvokeAsync(StateHasChanged);
     }
 
-    private async Task UpdateOpponentCell(int x, int y, CellState state)
+    private async Task UpdateOpponentCell(int x, int y, CellState state, bool own)
     {
-        OpponentsField[x * PlayerState.FieldSize + y] = state;
+        if (own)
+            PlayerState.Field[x * PlayerState.FieldSize + y] = state;
+        else
+            OpponentsField[x * PlayerState.FieldSize + y] = state;
 
         await InvokeAsync(StateHasChanged);
     }

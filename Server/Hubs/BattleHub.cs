@@ -60,6 +60,8 @@ class BattleHub : Hub<IGameHub>
         opponentState.Field[x * 10 + y] = CellState.miss;
         opponentState.Shots.Push((x, y));
 
-        await Clients.Group(opponentState.PlayerId.ToString()).UpdateCellState(x, y, CellState.miss);
+        await Clients.Group(opponentState.PlayerId.ToString()).UpdateCellState(x, y, CellState.miss, true);
+        await Clients.Group(playerId.ToString()).UpdateCellState(x, y, CellState.miss, false);
+
     }
 }
