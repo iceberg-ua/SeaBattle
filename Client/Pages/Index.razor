@@ -24,10 +24,14 @@
                 Now postion your ships and press <b>Ready</b> button
             </div>
             <div class="field-container">
-                <Battlefield Field="PlayerState.Field" FieldSize="PlayerState.FieldSize" CellClicked="@OwnFieldCellClicked"></Battlefield>
+                <div class="@OwnFieldState">
+                    <Battlefield Field="PlayerState.Field" FieldSize="PlayerState.FieldSize" CellClicked="@OwnFieldCellClicked"/>
+                </div>
                 @if (PlayerState.InProgress)
                 {
-                    <Battlefield Field="OpponentsField" FieldSize="PlayerState.FieldSize" CellClicked="@OpponentFieldCellClicked"></Battlefield>
+                    <div class="@OpponentsFieldState">
+                        <Battlefield Field="OpponentsField" FieldSize="PlayerState.FieldSize" CellClicked="@OpponentFieldCellClicked"/>
+                    </div>
                 }
             </div>
 
@@ -71,6 +75,10 @@
     private bool NotReady => false;
     // private bool NotReady => !PlayerState.Fleet.Complete;
 
+    private string OwnFieldState { get; set; } = "";
+
+    private string OpponentsFieldState { get; set; } = "";
+
     private bool Waiting { get; set; } = false;
 
     private void OwnFieldCellClicked((int x, int y) cell)
@@ -89,6 +97,16 @@
         PlayerState.ClearField();
     }
 
+    private void SetOwnFieldState(bool enabled)
+    {
+        OwnFieldState = enabled ? "" : "hover-disabled";
+    }
+
+    private void SetOpponentsFieldState(bool enabled)
+    {
+        OpponentsFieldState = enabled ? "" : "hover-disabled";
+    }
+
     #region Hub API
 
     private async Task JoinButtonClicked(string userName)
@@ -98,6 +116,8 @@
 
     private async Task OnReadyButtonClick()
     {
+        SetOwnFieldState(false);
+
         Waiting = true;
         await BattleHub?.SendAsync(nameof(IGameHub.PlayerReady), PlayerState.TableId, PlayerState.PlayerId)!;
     }
@@ -115,9 +135,15 @@
     private async Task UpdateOpponentCell(int x, int y, CellState state, bool own)
     {
         if (own)
+        {
             PlayerState.Field[x * PlayerState.FieldSize + y] = state;
+            SetOpponentsFieldState(true);
+        }
         else
+        {
             OpponentsField[x * PlayerState.FieldSize + y] = state;
+            SetOpponentsFieldState(false);
+        }
 
         await InvokeAsync(StateHasChanged);
     }
