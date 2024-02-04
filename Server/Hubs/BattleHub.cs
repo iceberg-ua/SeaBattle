@@ -55,13 +55,16 @@ class BattleHub : Hub<IGameHub>
     public async Task CellClicked(Guid gameId, Guid playerId, int x, int y)
     {
         var gameState = GameStorage.GetGame(gameId);
-        var opponentState = gameState?.Players.FirstOrDefault(p => p.Key != playerId).Value;
+        var enemyState = gameState?.Players.FirstOrDefault(p => p.Key != playerId).Value;
 
-        opponentState.Field[x * 10 + y] = CellState.miss;
-        opponentState.Shots.Push((x, y));
+        if (enemyState is null)
+            throw new Exception("Couldn't find players game state");
 
-        await Clients.Group(opponentState.PlayerId.ToString()).UpdateCellState(x, y, CellState.miss, true);
-        await Clients.Group(playerId.ToString()).UpdateCellState(x, y, CellState.miss, false);
+        var shotResult = enemyState.CheckShotResult(x, y);
+        enemyState.Shots.Push((x, y));
+
+        await Clients.Group(enemyState.PlayerId.ToString()).UpdateCellState(shotResult, true);
+        await Clients.Group(playerId.ToString()).UpdateCellState(shotResult, false);
 
     }
 }

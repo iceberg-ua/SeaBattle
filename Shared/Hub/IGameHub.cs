@@ -15,7 +15,7 @@ public interface IGameHub
 
     Task JoinedGame(PlayerState state, Guid playerId);
 
-    Task UpdateCellState(int x, int y, CellState cellState, bool own);
+    Task UpdateCellState(Dictionary<int, CellState> hits, bool own);
 
     Task StateChanged(bool fleetReady);
 

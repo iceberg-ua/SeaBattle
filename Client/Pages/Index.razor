@@ -63,7 +63,7 @@
     {
         if(firstRender)
         {
-            BattleHub.On<int, int, CellState, bool>(nameof(IGameHub.UpdateCellState), UpdateEnemyField);
+            BattleHub.On<Dictionary<int, CellState>, bool>(nameof(IGameHub.UpdateCellState), UpdateEnemyField);
             BattleHub.On<Guid>(nameof(IGameHub.GameStarted), GameStarted);
         }
 
@@ -132,17 +132,20 @@
         await InvokeAsync(StateHasChanged);
     }
 
-    private async Task UpdateEnemyField(int x, int y, CellState state, bool own)
+    private async Task UpdateEnemyField(Dictionary<int, CellState> hits, bool own)
     {
-        if (own)
+        foreach (var shot in hits)
         {
-            PlayerState.Field[x * PlayerState.FieldSize + y] = state;
-            SetEnemyFieldState(true);
-        }
-        else
-        {
-            EnemyField[x * PlayerState.FieldSize + y] = state;
-            SetEnemyFieldState(false);
+            if (own)
+            {
+                PlayerState.Field[shot.Key] = shot.Value;
+                SetEnemyFieldState(true);
+            }
+            else
+            {
+                EnemyField[shot.Key] = shot.Value;
+                SetEnemyFieldState(false);
+            }
         }
 
         await InvokeAsync(StateHasChanged);

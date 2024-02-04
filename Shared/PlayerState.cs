@@ -61,6 +61,14 @@ public class PlayerState
         }
     }
 
+    public Dictionary<int, CellState> CheckShotResult(int x, int y)
+    {
+        if (Fleet.Ships.Any(s => s.Contains((x, y))))
+            return new Dictionary<int, CellState>() { { x*10 + y, CellState.hit } };
+        else
+            return new Dictionary<int, CellState>() { { x * 10 + y, CellState.miss } };
+    }
+
     public void ClearField()
     {
         Field = new CellState[_fieldSize * _fieldSize];
