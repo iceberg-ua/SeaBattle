@@ -2,12 +2,13 @@
 @using Microsoft.AspNetCore.SignalR.Client
 @using SeaBattle.Client.Services;
 @using SeaBattle.Shared.Hub;
+@using SeaBattle.Shared.Player
 
 @inject IJSRuntime JsRuntime
-@inject ILocalStorageService Storage
+@inject ILocalStorageService LocalStorage
 
 <div class="container centered-form">
-    @if (PlayerState is null)
+    @if (Player is null)
     {
         <LoginComponent OnJoinButtonClick="JoinButtonClicked" />
     }
@@ -15,7 +16,7 @@
     {
         <div class="text-center mb-3">
             <lable class="mb-5">
-                <b>@PlayerState.Name</b>
+                <b>@Player.Name</b>
             </lable>
             <br/>
             <label>Welcome to the Sea Battle</label>
@@ -25,17 +26,18 @@
             </div>
             <div class="field-container">
                 <div class="@OwnFieldState">
-                    <Battlefield Field="PlayerState.Field" FieldSize="PlayerState.FieldSize" CellClicked="@OwnFieldCellClicked"/>
+                    <Battlefield Field="_field" FieldSize="Player.FieldSize" CellClicked="@FieldCellClicked"/>
                 </div>
-                @if (PlayerState.InProgress)
+@*                 @if (Player.InProgress)
                 {
                     <div class="@EnemyFieldState">
-                        <Battlefield Field="EnemyField" FieldSize="PlayerState.FieldSize" CellClicked="@EnemyFieldCellClicked"/>
+                        <Battlefield Field="_enemyField" FieldSize="Player.FieldSize" CellClicked="@EnemyFieldCellClicked"/>
                     </div>
-                }
+                } *@
             </div>
 
-            @if (!PlayerState.InProgress && !Waiting)
+            @* @if (!Player.InProgress && !Waiting) *@
+            @if (true)
             {
                 <div class="button-container">
                     <button class="btn btn-danger" disabled="@ClearButtonDisable" @onclick=ClearButtonClicked>Clear</button>
@@ -50,106 +52,3 @@
     }
 </div>
 
-@code {
-    [CascadingParameter]
-    public HubConnection BattleHub { get; set; } = default!;
-
-    [CascadingParameter]
-    public PlayerState PlayerState { get; set; } = default!;
-
-    public CellState[] EnemyField { get; set; }
-
-    protected override void OnAfterRender(bool firstRender)
-    {
-        if(firstRender)
-        {
-            BattleHub.On<Dictionary<int, CellState>, bool>(nameof(IGameHub.UpdateCellState), UpdateEnemyField);
-            BattleHub.On<Guid>(nameof(IGameHub.GameStarted), GameStarted);
-        }
-
-        base.OnAfterRender(firstRender);
-    }
-
-    private bool ClearButtonDisable => PlayerState.Field.All(c => c == CellState.empty);
-
-    private bool NotReady => false;
-    // private bool NotReady => !PlayerState.Fleet.Complete;
-
-    private string OwnFieldState { get; set; } = "";
-
-    private string EnemyFieldState { get; set; } = "";
-
-    private bool Waiting { get; set; } = false;
-
-    private void OwnFieldCellClicked((int x, int y) cell)
-    {
-        if(!PlayerState.InProgress)
-            PlayerState.TryToUpdateState(cell.x, cell.y);
-    }
-
-    private void EnemyFieldCellClicked((int x, int y) cell)
-    {
-        BattleHub?.SendAsync(nameof(IGameHub.CellClicked), PlayerState.TableId, PlayerState.PlayerId, cell.x, cell.y);
-    }
-
-    private void ClearButtonClicked(MouseEventArgs e)
-    {
-        PlayerState.ClearField();
-    }
-
-    private void SetOwnFieldState(bool enabled)
-    {
-        OwnFieldState = enabled ? "" : "hover-disabled";
-    }
-
-    private void SetEnemyFieldState(bool enabled)
-    {
-        EnemyFieldState = enabled ? "" : "hover-disabled";
-    }
-
-    #region Hub API
-
-    private async Task JoinButtonClicked(string userName)
-    {
-        await BattleHub?.SendAsync(nameof(IGameHub.JoinGame), Guid.Empty, Guid.Empty,userName)!;
-    }
-
-    private async Task OnReadyButtonClick()
-    {
-        SetOwnFieldState(false);
-
-        Waiting = true;
-        await BattleHub?.SendAsync(nameof(IGameHub.PlayerReady), PlayerState.TableId, PlayerState.PlayerId)!;
-    }
-
-    private async Task GameStarted(Guid gameId)
-    {
-        EnemyField = new CellState[PlayerState.FieldSize * PlayerState.FieldSize];
-
-        PlayerState.InProgress = true;
-        Waiting = false;
-
-        await InvokeAsync(StateHasChanged);
-    }
-
-    private async Task UpdateEnemyField(Dictionary<int, CellState> hits, bool own)
-    {
-        foreach (var shot in hits)
-        {
-            if (own)
-            {
-                PlayerState.Field[shot.Key] = shot.Value;
-                SetEnemyFieldState(true);
-            }
-            else
-            {
-                EnemyField[shot.Key] = shot.Value;
-                SetEnemyFieldState(false);
-            }
-        }
-
-        await InvokeAsync(StateHasChanged);
-    }
-
-    #endregion
-}

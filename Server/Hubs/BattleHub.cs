@@ -4,21 +4,14 @@ using SeaBattle.Shared.Hub;
 
 namespace SeaBattle.Server.Hubs;
 
-class BattleHub : Hub<IGameHub>
+class BattleHub(GlobalGameStorage storage) : Hub<IGameHub>
 {
-    public BattleHub(GlobalGameStorage storage)
+    private GlobalGameStorage GameStorage { get; } = storage;
+
+    public async Task JoinGame(Guid playerId, string playerName)
     {
-        GameStorage = storage;
-    }
-
-    private GlobalGameStorage GameStorage { get; } = default!;
-
-    public async Task JoinGame(Guid gameId, Guid playerId, string playerName)
-    {
-        Console.WriteLine($"REQUESTED: table - {gameId}, playerId-{playerId}, name - {playerName}");
-
-        GameState? gameState = gameId == Guid.Empty ? GameStorage.CreateGame() : 
-                                                      GameStorage.GetGame(gameId);
+        GameState? gameState = playerId == Guid.Empty ? GameStorage.CreateGame() : 
+                                                        GameStorage.GetGameByPlayerId(playerId);
 
         if (gameState == null)
         {
@@ -31,36 +24,34 @@ class BattleHub : Hub<IGameHub>
 
         if (playerState != null)
         {
-            Console.WriteLine($"Found player state: game - {playerState.TableId}, player - {playerState.PlayerId}");
             await Groups.AddToGroupAsync(Context.ConnectionId, playerState.TableId.ToString());
             await Groups.AddToGroupAsync(Context.ConnectionId, playerState.PlayerId.ToString());
-            Console.WriteLine($"Add connection to Group: {gameId}");
-            await Clients.Caller.JoinedGame(playerState, playerState.PlayerId);
+
+            var info = playerState.GetPlayerInfo();
+
+            await Clients.Caller.JoinedGame(info);
         }
     }
 
-    public async Task PlayerReady(Guid gameId, Guid playerId)
+    public async Task PlayerReady(Guid playerId)
     {
-        var gameState = GameStorage.GetGame(gameId);
+        var gameState = GameStorage.GetGameByPlayerId(playerId);
 
         gameState.Players[playerId].Ready = true;
 
         if(gameState.Players.Count == 2 && gameState.Players.All(p => p.Value.Ready))
         {
-            Console.WriteLine($"Broadcasting to Group: {gameId}");
-            await Clients.Group(gameId.ToString()).GameStarted(gameId);
+            await Clients.Group(gameState.ID.ToString()).GameStarted();
         }
     }
 
-    public async Task CellClicked(Guid gameId, Guid playerId, int x, int y)
+    public async Task CellClicked(Guid playerId, int x, int y)
     {
-        var gameState = GameStorage.GetGame(gameId);
-        var enemyState = gameState?.Players.FirstOrDefault(p => p.Key != playerId).Value;
-
-        if (enemyState is null)
-            throw new Exception("Couldn't find players game state");
+        var gameState = GameStorage.GetGameByPlayerId(playerId);
+        var enemyState = (gameState?.Players.FirstOrDefault(p => p.Key != playerId).Value) ?? throw new Exception("Couldn't find players game state");
 
         var shotResult = enemyState.CheckShotResult(x, y);
+
         enemyState.Shots.Push((x, y));
 
         await Clients.Group(enemyState.PlayerId.ToString()).UpdateCellState(shotResult, true);

@@ -1,17 +1,16 @@
 ﻿@using Microsoft.AspNetCore.SignalR.Client;
 @using SeaBattle.Client.Services
 @using SeaBattle.Shared.Hub;
-@inject ILocalStorageService LocalStorage
+@using SeaBattle.Shared.Player
 @inject NavigationManager Navigation
+@inject ILocalStorageService LocalStorage
 
 @implements IAsyncDisposable
 
-<CascadingValue Value="PlayerState" IsFixed=true>
-    <CascadingValue Value="BattleHub">
-        <main>
-            @Body
-        </main>
-    </CascadingValue>
+<CascadingValue Value="BattleHub" IsFixed=true>
+    <main>
+        @Body
+    </main>
 </CascadingValue>
 
 
@@ -19,7 +18,7 @@
     [Parameter]
     public RenderFragment? Body { get; set; }
 
-    public PlayerState? PlayerState { get; private set; }
+    public PlayerInfo Player { get; private set; } = default!;
     public HubConnection BattleHub { get; private set; } = default!;
 
     protected async override Task OnInitializedAsync()
@@ -27,8 +26,6 @@
         BattleHub = new HubConnectionBuilder()
             .WithUrl(Navigation.ToAbsoluteUri("/battlehub"))
             .Build();
-
-        BattleHub.On<PlayerState, Guid>(nameof(IGameHub.JoinedGame), JoinedGame);
 
         await BattleHub.StartAsync();
     }
@@ -44,29 +41,13 @@
 
     #region Hub Handlers
 
-    async Task JoinedGame(PlayerState state, Guid playerId)
-    {
-        PlayerState = state;
-        PlayerState.PlayerId = playerId;
-
-        Console.WriteLine($"Got new state: table {PlayerState.TableId}, player {playerId}");
-
-        LocalStorage.SetItemAsync("table", PlayerState.TableId);
-        LocalStorage.SetItemAsync("player", playerId);
-
-        await InvokeAsync(StateHasChanged);
-    }
-
     private async Task TryGetPlayerState()
     {
-        var gameId = await LocalStorage.GetItemAsync("table");
         var playerId = await LocalStorage.GetItemAsync("player");
 
-        if (Guid.TryParse(gameId, out Guid gameGuid) && 
-            Guid.TryParse(playerId, out Guid playerGuid))
+        if (Guid.TryParse(playerId, out Guid id))
         {
-            Console.WriteLine($"Request state: table {gameGuid}, player {playerGuid}");
-            await BattleHub?.SendAsync(nameof(IGameHub.JoinGame), gameGuid, playerGuid, "")!;
+            await BattleHub?.SendAsync(nameof(IGameHub.JoinGame), id, "")!;
         }
     }
 

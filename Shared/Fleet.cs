@@ -1,4 +1,6 @@
-﻿namespace SeaBattle.Shared;
+﻿using SeaBattle.Shared.Ships;
+
+namespace SeaBattle.Shared;
 
 public class Fleet
 {
@@ -27,10 +29,10 @@ public class Fleet
         if (Complete)
             return false;
 
-        var existingShips = Ships.Where(ship => ship.Contains((x - 1, y)) ||
-                                                ship.Contains((x + 1, y)) ||
-                                                ship.Contains((x, y - 1)) ||
-                                                ship.Contains((x, y + 1))).ToList();
+        var existingShips = Ships.Where(ship => ship.Any(s => s.HasPosition(x - 1, y)) ||
+                                                ship.Any(s => s.HasPosition(x + 1, y)) ||
+                                                ship.Any(s => s.HasPosition(x, y - 1)) ||
+                                                ship.Any(s => s.HasPosition(x, y + 1))).ToList();
         var count = existingShips.Count;
 
         if (count > 1)
@@ -46,7 +48,7 @@ public class Fleet
                 newShip.AddRange(item);
             }
 
-            newShip.AddDeck((x, y));
+            newShip.AddDeck(new(x, y, CellState.ship));
             Ships.Add(newShip);
         }
         else if (count == 1)
@@ -56,10 +58,10 @@ public class Fleet
             if (ship.Size == _maxShipSize)
                 return false;
 
-            ship.AddDeck((x, y));
+            ship.AddDeck(new(x, y, CellState.ship));
         }
         else
-            Ships.Add([(x, y)]);
+            Ships.Add([new(x, y, CellState.ship)]);
 
         Complete = CheckCompletion();
 
@@ -68,13 +70,13 @@ public class Fleet
 
     public void RemoveShipDeck(int x, int y)
     {
-        var existingShips = Ships.Where(s => s.Contains((x, y)));
+        var existingShips = Ships.Where(s => s.Any(s => s.HasPosition(x, y)));
 
         if (!existingShips.Any())
             return;
 
         var owner = existingShips.First();
-        var index = owner.IndexOf((x, y));
+        var index = owner.FindIndex(s => s.HasPosition(x,y));
 
         var firstPart = owner[..index];
         var secondPart = owner[(index + 1)..];

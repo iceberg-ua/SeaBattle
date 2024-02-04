@@ -1,4 +1,6 @@
-﻿namespace SeaBattle.Shared;
+﻿using SeaBattle.Shared.Ships;
+
+namespace SeaBattle.Shared.Player;
 
 public class PlayerState
 {
@@ -48,6 +50,21 @@ public class PlayerState
     private bool OnDiagonal(int x, int y) => CellIsOccupied(x - 1, y - 1) || CellIsOccupied(x + 1, y - 1) ||
                                              CellIsOccupied(x - 1, y + 1) || CellIsOccupied(x + 1, y + 1);
 
+    public PlayerInfo GetPlayerInfo()
+    {
+        var fieldState = new Dictionary<int, CellState>();
+
+        foreach (var ship in Fleet.Ships)
+        {
+            foreach (ShipDeck deck in ship)
+            {
+                fieldState.Add(deck.X * _fieldSize + deck.Y, deck.State);
+            }
+        }
+
+        return new(PlayerId, Name, _fieldSize, fieldState); ;
+    }
+
     public void TryToUpdateState(int x, int y)
     {
         if (CellIsOccupied(x, y))
@@ -63,10 +80,11 @@ public class PlayerState
 
     public Dictionary<int, CellState> CheckShotResult(int x, int y)
     {
-        if (Fleet.Ships.Any(s => s.Contains((x, y))))
-            return new Dictionary<int, CellState>() { { x*10 + y, CellState.hit } };
-        else
-            return new Dictionary<int, CellState>() { { x * 10 + y, CellState.miss } };
+        //if (Fleet.Ships.Any(s => s.Contains())
+        //    return new Dictionary<int, CellState>() { { x * 10 + y, CellState.hit } };
+        //else
+        //    return new Dictionary<int, CellState>() { { x * 10 + y, CellState.miss } };
+        return [];
     }
 
     public void ClearField()

@@ -1,3 +1,5 @@
+using SeaBattle.Shared.Player;
+
 namespace SeaBattle.Shared;
 
 public class GameState

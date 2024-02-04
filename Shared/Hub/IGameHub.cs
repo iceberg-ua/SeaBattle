@@ -1,25 +1,31 @@
-﻿namespace SeaBattle.Shared.Hub;
+﻿using SeaBattle.Shared.Player;
+
+namespace SeaBattle.Shared.Hub;
 public interface IGameHub
 {
     #region Client API
     
-    Task JoinGame(Guid gameId, Guid playerId, string userName);
+    Task JoinGame(Guid playerId, string userName);
 
-    Task PlayerReady(Guid gameId, Guid playerId);
+    Task PlayerReady(Guid playerId);
 
-    Task CellClicked(Guid gameId, Guid playerId, int x, int y);
+    Task CellClicked(Guid playerId, int x, int y);
+
+    Task ClearField(Guid playerId);
 
     #endregion
 
     #region Server reponse
 
-    Task JoinedGame(PlayerState state, Guid playerId);
+    Task JoinedGame(PlayerInfo player);
 
     Task UpdateCellState(Dictionary<int, CellState> hits, bool own);
 
+    Task UpdateEnemyCellState(Dictionary<int, CellState> hits, bool own);
+
     Task StateChanged(bool fleetReady);
 
-    Task GameStarted(Guid gameId);
+    Task GameStarted();
 
     #endregion
 }
