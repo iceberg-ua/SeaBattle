@@ -29,8 +29,8 @@
                 </div>
                 @if (PlayerState.InProgress)
                 {
-                    <div class="@OpponentsFieldState">
-                        <Battlefield Field="OpponentsField" FieldSize="PlayerState.FieldSize" CellClicked="@OpponentFieldCellClicked"/>
+                    <div class="@EnemyFieldState">
+                        <Battlefield Field="EnemyField" FieldSize="PlayerState.FieldSize" CellClicked="@EnemyFieldCellClicked"/>
                     </div>
                 }
             </div>
@@ -44,7 +44,7 @@
             }
             else @if (Waiting)
             {
-                <h3>Waiting for opponent</h3>
+                <h3>Waiting for an opponent</h3>
             }
     </div>
     }
@@ -57,13 +57,13 @@
     [CascadingParameter]
     public PlayerState PlayerState { get; set; } = default!;
 
-    public CellState[] OpponentsField { get; set; }
+    public CellState[] EnemyField { get; set; }
 
     protected override void OnAfterRender(bool firstRender)
     {
         if(firstRender)
         {
-            BattleHub.On<int, int, CellState, bool>(nameof(IGameHub.UpdateCellState), UpdateOpponentCell);
+            BattleHub.On<int, int, CellState, bool>(nameof(IGameHub.UpdateCellState), UpdateEnemyField);
             BattleHub.On<Guid>(nameof(IGameHub.GameStarted), GameStarted);
         }
 
@@ -77,7 +77,7 @@
 
     private string OwnFieldState { get; set; } = "";
 
-    private string OpponentsFieldState { get; set; } = "";
+    private string EnemyFieldState { get; set; } = "";
 
     private bool Waiting { get; set; } = false;
 
@@ -87,7 +87,7 @@
             PlayerState.TryToUpdateState(cell.x, cell.y);
     }
 
-    private void OpponentFieldCellClicked((int x, int y) cell)
+    private void EnemyFieldCellClicked((int x, int y) cell)
     {
         BattleHub?.SendAsync(nameof(IGameHub.CellClicked), PlayerState.TableId, PlayerState.PlayerId, cell.x, cell.y);
     }
@@ -102,9 +102,9 @@
         OwnFieldState = enabled ? "" : "hover-disabled";
     }
 
-    private void SetOpponentsFieldState(bool enabled)
+    private void SetEnemyFieldState(bool enabled)
     {
-        OpponentsFieldState = enabled ? "" : "hover-disabled";
+        EnemyFieldState = enabled ? "" : "hover-disabled";
     }
 
     #region Hub API
@@ -124,7 +124,7 @@
 
     private async Task GameStarted(Guid gameId)
     {
-        OpponentsField = new CellState[PlayerState.FieldSize * PlayerState.FieldSize];
+        EnemyField = new CellState[PlayerState.FieldSize * PlayerState.FieldSize];
 
         PlayerState.InProgress = true;
         Waiting = false;
@@ -132,17 +132,17 @@
         await InvokeAsync(StateHasChanged);
     }
 
-    private async Task UpdateOpponentCell(int x, int y, CellState state, bool own)
+    private async Task UpdateEnemyField(int x, int y, CellState state, bool own)
     {
         if (own)
         {
             PlayerState.Field[x * PlayerState.FieldSize + y] = state;
-            SetOpponentsFieldState(true);
+            SetEnemyFieldState(true);
         }
         else
         {
-            OpponentsField[x * PlayerState.FieldSize + y] = state;
-            SetOpponentsFieldState(false);
+            EnemyField[x * PlayerState.FieldSize + y] = state;
+            SetEnemyFieldState(false);
         }
 
         await InvokeAsync(StateHasChanged);
