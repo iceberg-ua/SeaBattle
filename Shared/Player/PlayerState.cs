@@ -65,8 +65,11 @@ public class PlayerState
         return new(PlayerId, Name, _fieldSize, fieldState); ;
     }
 
-    public void TryToUpdateState(int x, int y)
+    public bool TryToUpdateState(int x, int y)
     {
+        var pos = x * FieldSize + y;
+        var prevState = Field[pos];
+
         if (CellIsOccupied(x, y))
         {
             SetCell(x, y, CellState.empty);
@@ -76,6 +79,8 @@ public class PlayerState
         {
             SetCell(x, y, CellState.ship);
         }
+
+        return Field[pos] != prevState;
     }
 
     public Dictionary<int, CellState> CheckShotResult(int x, int y)

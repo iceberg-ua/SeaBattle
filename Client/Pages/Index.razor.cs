@@ -24,7 +24,7 @@ public partial class Index
         {
             BattleHub.On<PlayerInfo>(nameof(IGameHub.JoinedGame), JoinedGame);
             BattleHub.On<Guid>(nameof(IGameHub.GameStarted), GameStarted);
-            BattleHub.On<Dictionary<int, CellState>, bool>(nameof(IGameHub.UpdateCellState), UpdateEnemyField);
+            BattleHub.On<Dictionary<int, CellState>>(nameof(IGameHub.UpdateCellState), UpdateField);
         }
 
         base.OnAfterRender(firstRender);
@@ -76,9 +76,6 @@ public partial class Index
 
     private async void FieldCellClicked((int x, int y) cell)
     {
-        // if(!Player.InProgress)
-        //     Player.TryToUpdateState(cell.x, cell.y);
-
         await BattleHub?.SendAsync(nameof(IGameHub.CellClicked), Player.Id, cell.x, cell.y)!;
     }
 
@@ -105,20 +102,21 @@ public partial class Index
         await InvokeAsync(StateHasChanged);
     }
 
-    private async Task UpdateEnemyField(Dictionary<int, CellState> hits, bool own)
+    private async Task UpdateField(Dictionary<int, CellState> cells)
     {
-        foreach (var shot in hits)
+        foreach (var shot in cells)
         {
-            if (own)
-            {
-                _field[shot.Key] = shot.Value;
-                SetEnemyFieldState(true);
-            }
-            else
-            {
-                _enemyField[shot.Key] = shot.Value;
-                SetEnemyFieldState(false);
-            }
+            _field[shot.Key] = shot.Value;
+            //if (own)
+            //{
+            //    _field[shot.Key] = shot.Value;
+            //    SetEnemyFieldState(true);
+            //}
+            //else
+            //{
+            //    _enemyField[shot.Key] = shot.Value;
+            //    SetEnemyFieldState(false);
+            //}
         }
 
         await InvokeAsync(StateHasChanged);

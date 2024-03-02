@@ -3,8 +3,8 @@
 namespace SeaBattle.Shared.Hub;
 public interface IGameHub
 {
-    #region Client API
-    
+    #region Server API (executed on server)
+
     Task JoinGame(Guid playerId, string userName);
 
     Task PlayerReady(Guid playerId);
@@ -15,13 +15,13 @@ public interface IGameHub
 
     #endregion
 
-    #region Server reponse
+    #region Server reponse (handled on client)
 
     Task JoinedGame(PlayerInfo player);
 
-    Task UpdateCellState(Dictionary<int, CellState> hits, bool own);
+    Task UpdateCellState(Dictionary<int, CellState> hits);
 
-    Task UpdateEnemyCellState(Dictionary<int, CellState> hits, bool own);
+    Task UpdateEnemyCellState(Dictionary<int, CellState> hits);
 
     Task StateChanged(bool fleetReady);
 

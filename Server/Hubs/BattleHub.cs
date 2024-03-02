@@ -10,7 +10,7 @@ class BattleHub(GlobalGameStorage storage) : Hub<IGameHub>
 
     public async Task JoinGame(Guid playerId, string playerName)
     {
-        GameState? gameState = playerId == Guid.Empty ? GameStorage.CreateGame() : 
+        GameState? gameState = playerId == Guid.Empty ? GameStorage.CreateGame() :
                                                         GameStorage.GetGameByPlayerId(playerId);
 
         if (gameState == null)
@@ -39,7 +39,7 @@ class BattleHub(GlobalGameStorage storage) : Hub<IGameHub>
 
         gameState.Players[playerId].Ready = true;
 
-        if(gameState.Players.Count == 2 && gameState.Players.All(p => p.Value.Ready))
+        if (gameState.Players.Count == 2 && gameState.Players.All(p => p.Value.Ready))
         {
             await Clients.Group(gameState.ID.ToString()).GameStarted();
         }
@@ -48,14 +48,31 @@ class BattleHub(GlobalGameStorage storage) : Hub<IGameHub>
     public async Task CellClicked(Guid playerId, int x, int y)
     {
         var gameState = GameStorage.GetGameByPlayerId(playerId);
-        var enemyState = (gameState?.Players.FirstOrDefault(p => p.Key != playerId).Value) ?? throw new Exception("Couldn't find players game state");
 
-        var shotResult = enemyState.CheckShotResult(x, y);
+        if(gameState is null)
+            throw new ArgumentNullException(nameof(gameState), "Game state wasn't found");
 
-        enemyState.Shots.Push((x, y));
+        if (gameState.InProgress)
+        {
+            var enemyState = (gameState?.Players.FirstOrDefault(p => p.Key != playerId).Value) ?? throw new Exception("Couldn't find players game state");
+            var shotResult = enemyState.CheckShotResult(x, y);
 
-        await Clients.Group(enemyState.PlayerId.ToString()).UpdateCellState(shotResult, true);
-        await Clients.Group(playerId.ToString()).UpdateCellState(shotResult, false);
+            enemyState.Shots.Push((x, y));
+
+            await Clients.Group(enemyState.PlayerId.ToString()).UpdateCellState(shotResult);
+            await Clients.Group(playerId.ToString()).UpdateEnemyCellState(shotResult);
+        }
+        else
+        {
+            var playerState = gameState.Players[playerId];
+            var pos = x * gameState.Size + y;
+
+            if (playerState.TryToUpdateState(x, y))
+            {
+                var cellState = playerState.Field[pos];
+                await Clients.Group(playerId.ToString()).UpdateCellState(new() { { pos, cellState } });
+            }
+        }
 
     }
 }
