@@ -7,11 +7,11 @@ public interface IGameHub
 
     Task JoinGame(Guid playerId, string userName);
 
-    Task PlayerReady(Guid playerId);
-
     Task CellClicked(Guid playerId, int x, int y);
 
     Task ClearField(Guid playerId);
+
+    Task PlayerReady(Guid playerId);
 
     #endregion
 
@@ -22,6 +22,8 @@ public interface IGameHub
     Task UpdateCellState(Dictionary<int, CellState> hits, bool full);
 
     Task ClearField();
+
+    Task SetReady(bool ready);
 
     Task UpdateEnemyCellState(Dictionary<int, CellState> hits);
 

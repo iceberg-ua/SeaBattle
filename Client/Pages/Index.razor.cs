@@ -23,9 +23,10 @@ public partial class Index
         if (firstRender)
         {
             BattleHub.On<PlayerInfo>(nameof(IGameHub.JoinedGame), JoinedGame);
-            BattleHub.On<Guid>(nameof(IGameHub.GameStarted), GameStarted);
             BattleHub.On<Dictionary<int, CellState>, bool>(nameof(IGameHub.UpdateCellState), UpdateField);
             BattleHub.On(nameof(IGameHub.ClearField), ClearField);
+            BattleHub.On<bool>(nameof(IGameHub.SetReady), SetReady);
+            BattleHub.On<Guid>(nameof(IGameHub.GameStarted), GameStarted);
         }
 
         base.OnAfterRender(firstRender);
@@ -72,9 +73,6 @@ public partial class Index
 
     private async Task OnReadyButtonClick()
     {
-        SetOwnFieldState(false);
-
-        Waiting = true;
         await BattleHub?.SendAsync(nameof(IGameHub.PlayerReady), Player.Id)!;
     }
 
@@ -106,6 +104,14 @@ public partial class Index
     private async Task ClearField()
     {
         _field = InitField(Player.FieldSize);
+
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task SetReady(bool obj)
+    {
+        Waiting = true;
+        SetOwnFieldState(false);
 
         await InvokeAsync(StateHasChanged);
     }

@@ -36,14 +36,14 @@
                 } *@
             </div>
 
-            @if(true)
+            @if(!Waiting)
             {
                 <div class="button-container">
                     <button class="btn btn-danger" disabled="@ClearButtonDisable" @onclick=ClearButtonClicked>Clear</button>
                     <button class="btn btn-success" disabled="@(!FleetComplete)" @onclick=OnReadyButtonClick>Ready</button>
                 </div>
             }
-            else @if (Waiting)
+            else
             {
                 <h3>Waiting for an opponent</h3>
             }
