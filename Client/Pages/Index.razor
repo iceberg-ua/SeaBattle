@@ -40,7 +40,7 @@
             {
                 <div class="button-container">
                     <button class="btn btn-danger" disabled="@ClearButtonDisable" @onclick=ClearButtonClicked>Clear</button>
-                    <button class="btn btn-success" disabled="@NotReady" @onclick=OnReadyButtonClick>Ready</button>
+                    <button class="btn btn-success" disabled="@(!FleetComplete)" @onclick=OnReadyButtonClick>Ready</button>
                 </div>
             }
             else @if (Waiting)

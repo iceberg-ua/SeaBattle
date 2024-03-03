@@ -8,6 +8,8 @@ class BattleHub(GlobalGameStorage storage) : Hub<IGameHub>
 {
     private GlobalGameStorage GameStorage { get; } = storage;
 
+    private GameState GetGameState(Guid playerId) => GameStorage.GetGameByPlayerId(playerId) ?? throw new NullReferenceException("Game state wasn't found");
+
     public async Task JoinGame(Guid playerId, string playerName)
     {
         GameState? gameState = playerId == Guid.Empty ? GameStorage.CreateGame() :
@@ -35,7 +37,7 @@ class BattleHub(GlobalGameStorage storage) : Hub<IGameHub>
 
     public async Task PlayerReady(Guid playerId)
     {
-        var gameState = GameStorage.GetGameByPlayerId(playerId);
+        var gameState = GetGameState(playerId);
 
         gameState.Players[playerId].Ready = true;
 
@@ -47,20 +49,17 @@ class BattleHub(GlobalGameStorage storage) : Hub<IGameHub>
 
     public async Task CellClicked(Guid playerId, int x, int y)
     {
-        var gameState = GameStorage.GetGameByPlayerId(playerId);
-
-        if(gameState is null)
-            throw new ArgumentNullException(nameof(gameState), "Game state wasn't found");
+        var gameState = GetGameState(playerId);
 
         if (gameState.InProgress)
         {
-            var enemyState = (gameState?.Players.FirstOrDefault(p => p.Key != playerId).Value) ?? throw new Exception("Couldn't find players game state");
-            var shotResult = enemyState.CheckShotResult(x, y);
+            //var enemyState = (gameState?.Players.FirstOrDefault(p => p.Key != playerId).Value) ?? throw new Exception("Couldn't find players game state");
+            //var shotResult = enemyState.CheckShotResult(x, y);
 
-            enemyState.Shots.Push((x, y));
+            //enemyState.Shots.Push((x, y));
 
-            await Clients.Group(enemyState.PlayerId.ToString()).UpdateCellState(shotResult);
-            await Clients.Group(playerId.ToString()).UpdateEnemyCellState(shotResult);
+            //await Clients.Group(enemyState.PlayerId.ToString()).UpdateCellState(shotResult);
+            //await Clients.Group(playerId.ToString()).UpdateEnemyCellState(shotResult);
         }
         else
         {
@@ -70,9 +69,19 @@ class BattleHub(GlobalGameStorage storage) : Hub<IGameHub>
             if (playerState.TryToUpdateState(x, y))
             {
                 var cellState = playerState.Field[pos];
-                await Clients.Group(playerId.ToString()).UpdateCellState(new() { { pos, cellState } });
+                await Clients.Group(playerId.ToString()).UpdateCellState(new() { { pos, cellState } }, playerState.Fleet.Complete);
             }
         }
 
+    }
+
+    public async Task ClearField(Guid playerId)
+    {
+        var gameState = GetGameState(playerId);
+        var playerState = gameState.Players[playerId];
+
+        playerState.ClearField();
+
+        await Clients.Group(playerId.ToString()).ClearField();
     }
 }

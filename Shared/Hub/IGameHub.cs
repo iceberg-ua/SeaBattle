@@ -19,7 +19,9 @@ public interface IGameHub
 
     Task JoinedGame(PlayerInfo player);
 
-    Task UpdateCellState(Dictionary<int, CellState> hits);
+    Task UpdateCellState(Dictionary<int, CellState> hits, bool full);
+
+    Task ClearField();
 
     Task UpdateEnemyCellState(Dictionary<int, CellState> hits);
 

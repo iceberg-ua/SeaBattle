@@ -24,7 +24,8 @@ public partial class Index
         {
             BattleHub.On<PlayerInfo>(nameof(IGameHub.JoinedGame), JoinedGame);
             BattleHub.On<Guid>(nameof(IGameHub.GameStarted), GameStarted);
-            BattleHub.On<Dictionary<int, CellState>>(nameof(IGameHub.UpdateCellState), UpdateField);
+            BattleHub.On<Dictionary<int, CellState>, bool>(nameof(IGameHub.UpdateCellState), UpdateField);
+            BattleHub.On(nameof(IGameHub.ClearField), ClearField);
         }
 
         base.OnAfterRender(firstRender);
@@ -32,8 +33,7 @@ public partial class Index
 
     private bool ClearButtonDisable => _field.All(c => c == CellState.empty);
 
-    private bool NotReady => false;
-    // private bool NotReady => !PlayerState.Fleet.Complete;
+    private bool FleetComplete { get; set; } = false;
 
     private string OwnFieldState { get; set; } = "";
 
@@ -60,23 +60,22 @@ public partial class Index
         await BattleHub?.SendAsync(nameof(IGameHub.JoinGame), Guid.Empty, userName)!;
     }
 
+    private async void FieldCellClicked((int x, int y) cell)
+    {
+        await BattleHub?.SendAsync(nameof(IGameHub.CellClicked), Player.Id, cell.x, cell.y)!;
+    }
+
+    private async void ClearButtonClicked(MouseEventArgs e)
+    {
+        await BattleHub?.SendAsync(nameof(IGameHub.ClearField), Player.Id)!;
+    }
+
     private async Task OnReadyButtonClick()
     {
         SetOwnFieldState(false);
 
         Waiting = true;
         await BattleHub?.SendAsync(nameof(IGameHub.PlayerReady), Player.Id)!;
-    }
-
-    private async void ClearButtonClicked(MouseEventArgs e)
-    {
-        _field = InitField(Player.FieldSize);
-        await BattleHub?.SendAsync(nameof(IGameHub.ClearField), Player.Id)!;
-    }
-
-    private async void FieldCellClicked((int x, int y) cell)
-    {
-        await BattleHub?.SendAsync(nameof(IGameHub.CellClicked), Player.Id, cell.x, cell.y)!;
     }
 
     #endregion
@@ -92,32 +91,31 @@ public partial class Index
         await InvokeAsync(StateHasChanged);
     }
 
+    private async Task UpdateField(Dictionary<int, CellState> cells, bool complete)
+    {
+        foreach (var shot in cells)
+        {
+            _field[shot.Key] = shot.Value;
+        }
+
+        FleetComplete = complete;
+
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task ClearField()
+    {
+        _field = InitField(Player.FieldSize);
+
+        await InvokeAsync(StateHasChanged);
+    }
+
     private async Task GameStarted(Guid gameId)
     {
         // _enemyField = new CellState[Player.FieldSize * Player.FieldSize];
 
         // Player.InProgress = true;
         // Waiting = false;
-
-        await InvokeAsync(StateHasChanged);
-    }
-
-    private async Task UpdateField(Dictionary<int, CellState> cells)
-    {
-        foreach (var shot in cells)
-        {
-            _field[shot.Key] = shot.Value;
-            //if (own)
-            //{
-            //    _field[shot.Key] = shot.Value;
-            //    SetEnemyFieldState(true);
-            //}
-            //else
-            //{
-            //    _enemyField[shot.Key] = shot.Value;
-            //    SetEnemyFieldState(false);
-            //}
-        }
 
         await InvokeAsync(StateHasChanged);
     }
