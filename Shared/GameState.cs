@@ -30,4 +30,12 @@ public class GameState
 
         return playerState;
     }
+
+    public void SetPlayerReady(Guid playerId)
+    {
+        Players[playerId].Ready = true;
+
+        if (Players.Count == 2 && Players.All(p => p.Value.Ready))
+            InProgress = true;
+    }
 }

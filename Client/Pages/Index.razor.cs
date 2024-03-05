@@ -26,7 +26,7 @@ public partial class Index
             BattleHub.On<Dictionary<int, CellState>, bool>(nameof(IGameHub.UpdateCellState), UpdateField);
             BattleHub.On(nameof(IGameHub.ClearField), ClearField);
             BattleHub.On<bool>(nameof(IGameHub.SetReady), SetReady);
-            BattleHub.On<Guid>(nameof(IGameHub.GameStarted), GameStarted);
+            BattleHub.On(nameof(IGameHub.GameStarted), GameStarted);
         }
 
         base.OnAfterRender(firstRender);
@@ -35,6 +35,8 @@ public partial class Index
     private bool ClearButtonDisable => _field.All(c => c == CellState.empty);
 
     private bool FleetComplete { get; set; } = false;
+
+    private bool IsStarted { get; set; } = false;
 
     private string OwnFieldState { get; set; } = "";
 
@@ -116,13 +118,10 @@ public partial class Index
         await InvokeAsync(StateHasChanged);
     }
 
-    private async Task GameStarted(Guid gameId)
+    private async Task GameStarted()
     {
-        // _enemyField = new CellState[Player.FieldSize * Player.FieldSize];
-
-        // Player.InProgress = true;
-        // Waiting = false;
-
+        IsStarted = true;
+        _enemyField = InitField(Player.FieldSize);
         await InvokeAsync(StateHasChanged);
     }
 

@@ -39,11 +39,11 @@ class BattleHub(GlobalGameStorage storage) : Hub<IGameHub>
     {
         var gameState = GetGameState(playerId);
 
-        gameState.Players[playerId].Ready = true;
+        gameState.SetPlayerReady(playerId);
 
         await Clients.Group(playerId.ToString()).SetReady(true);
 
-        if (gameState.Players.Count == 2 && gameState.Players.All(p => p.Value.Ready))
+        if(gameState.InProgress)
         {
             await Clients.Group(gameState.ID.ToString()).GameStarted();
         }

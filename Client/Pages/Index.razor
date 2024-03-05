@@ -18,7 +18,7 @@
             <lable class="mb-5">
                 <b>@Player.Name</b>
             </lable>
-            <br/>
+            <br />
             <label>Welcome to the Sea Battle</label>
 
             <div class="text-center mb-1">
@@ -26,28 +26,31 @@
             </div>
             <div class="field-container">
                 <div class="@OwnFieldState">
-                    <Battlefield Field="_field" FieldSize="Player.FieldSize" CellClicked="@FieldCellClicked"/>
+                    <Battlefield Field="_field" FieldSize="Player.FieldSize" CellClicked="@FieldCellClicked" />
                 </div>
-@*                 @if (Player.InProgress)
+                @if (IsStarted)
                 {
                     <div class="@EnemyFieldState">
-                        <Battlefield Field="_enemyField" FieldSize="Player.FieldSize" CellClicked="@EnemyFieldCellClicked"/>
+                        <Battlefield Field="_enemyField" FieldSize="Player.FieldSize"/>
                     </div>
-                } *@
+                }
             </div>
 
-            @if(!Waiting)
+            @if (!IsStarted)
             {
-                <div class="button-container">
-                    <button class="btn btn-danger" disabled="@ClearButtonDisable" @onclick=ClearButtonClicked>Clear</button>
-                    <button class="btn btn-success" disabled="@(!FleetComplete)" @onclick=OnReadyButtonClick>Ready</button>
-                </div>
+                @if (!Waiting)
+                {
+                    <div class="button-container">
+                        <button class="btn btn-danger" disabled="@ClearButtonDisable" @onclick=ClearButtonClicked>Clear</button>
+                        <button class="btn btn-success" disabled="@(!FleetComplete)" @onclick=OnReadyButtonClick>Ready</button>
+                    </div>
+                }
+                else
+                {
+                    <h3>Waiting for an opponent</h3>
+                }
             }
-            else
-            {
-                <h3>Waiting for an opponent</h3>
-            }
-    </div>
+        </div>
     }
 </div>
 
