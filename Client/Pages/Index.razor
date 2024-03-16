@@ -22,9 +22,13 @@
             @if (!IsStarted)
             {
                 <label>Welcome to the Sea Battle</label>
-                <div class="text-center mb-1">
-                    Now postion your ships and press <b>Ready</b> button
-                </div>
+
+                @if (!WaitingOpponent)
+                {
+                    <div class="text-center mb-1">
+                        Now postion your ships and press <b>Ready</b> button
+                    </div>
+                }
             }
             else
             {
@@ -35,7 +39,7 @@
                 <div class="text-center mb-1">
                     @if (WaitingForShot)
                     {
-                        <b>It is your turn</b>
+                        <b>It is your shot</b>
                     }
                     else
                     {
@@ -50,7 +54,7 @@
                 @if (IsStarted)
                 {
                     <div class="@EnemyFieldState">
-                        <Battlefield Field="_enemyField" FieldSize="Player.FieldSize" />
+                        <Battlefield Field="_enemyField" FieldSize="Player.FieldSize" CellClicked="@FieldCellClicked" />
                     </div>
                 }
             </div>

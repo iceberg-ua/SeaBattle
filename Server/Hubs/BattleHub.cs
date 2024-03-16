@@ -46,6 +46,9 @@ class BattleHub(GlobalGameStorage storage) : Hub<IGameHub>
         if(gameState.InProgress)
         {
             await Clients.Group(gameState.ID.ToString()).GameStarted();
+
+            var randomPlayer = gameState.Players.Keys.ElementAt(Random.Shared.Next(0, gameState.Players.Count));
+            await Clients.Groups(randomPlayer.ToString()).MoveTransition();
         }
     }
 
@@ -62,6 +65,10 @@ class BattleHub(GlobalGameStorage storage) : Hub<IGameHub>
 
             //await Clients.Group(enemyState.PlayerId.ToString()).UpdateCellState(shotResult);
             //await Clients.Group(playerId.ToString()).UpdateEnemyCellState(shotResult);
+            gameState.Players[playerId].InTurn = false;
+            var oponent = gameState.Players.Where(x => x.Key != playerId).FirstOrDefault();
+            oponent.Value.InTurn = true;
+            await Clients.Groups(oponent.Key.ToString()).MoveTransition();
         }
         else
         {

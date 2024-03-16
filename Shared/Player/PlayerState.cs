@@ -28,7 +28,7 @@ public class PlayerState
 
     public int FieldSize => _fieldSize;
 
-    public bool InProgress { get; set; } = false;
+    public bool InTurn { get; set; } = false;
 
     public bool Ready { get; set; } = false;
 

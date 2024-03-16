@@ -22,11 +22,12 @@ public partial class Index
     {
         if (firstRender)
         {
-            BattleHub.On<PlayerInfo>(nameof(IGameHub.JoinedGame), JoinedGame);
-            BattleHub.On<Dictionary<int, CellState>, bool>(nameof(IGameHub.UpdateCellState), UpdateField);
-            BattleHub.On(nameof(IGameHub.ClearField), ClearField);
-            BattleHub.On<bool>(nameof(IGameHub.SetReady), SetReady);
-            BattleHub.On(nameof(IGameHub.GameStarted), GameStarted);
+            BattleHub.On<PlayerInfo>(nameof(IGameHub.JoinedGame), OnJoinedGame);
+            BattleHub.On<Dictionary<int, CellState>, bool>(nameof(IGameHub.UpdateCellState), OnUpdateField);
+            BattleHub.On(nameof(IGameHub.ClearField), OnClearField);
+            BattleHub.On<bool>(nameof(IGameHub.SetReady), OnSetReady);
+            BattleHub.On(nameof(IGameHub.GameStarted), OnGameStarted);
+            BattleHub.On(nameof(IGameHub.MoveTransition), OnMoveTransition);
         }
 
         base.OnAfterRender(firstRender);
@@ -72,23 +73,31 @@ public partial class Index
     private async void FieldCellClicked((int x, int y) cell)
     {
         await BattleHub?.SendAsync(nameof(IGameHub.CellClicked), Player.Id, cell.x, cell.y)!;
+
+        if (IsStarted)
+        {
+            DisableEnemyField();
+            WaitingForShot = false;
+        }
     }
 
     private async void ClearButtonClicked(MouseEventArgs e)
     {
-        await BattleHub?.SendAsync(nameof(IGameHub.ClearField), Player.Id)!;
+        if(!ClearButtonDisable)
+            await BattleHub?.SendAsync(nameof(IGameHub.ClearField), Player.Id)!;
     }
 
     private async Task OnReadyButtonClick()
     {
-        await BattleHub?.SendAsync(nameof(IGameHub.PlayerReady), Player.Id)!;
+        if(FleetComplete)
+            await BattleHub?.SendAsync(nameof(IGameHub.PlayerReady), Player.Id)!;
     }
 
     #endregion
 
     #region Hub API
 
-    private async Task JoinedGame(PlayerInfo player)
+    private async Task OnJoinedGame(PlayerInfo player)
     {
         Player = player;
         _field = InitField(Player.FieldSize);
@@ -97,7 +106,7 @@ public partial class Index
         await InvokeAsync(StateHasChanged);
     }
 
-    private async Task UpdateField(Dictionary<int, CellState> cells, bool complete)
+    private async Task OnUpdateField(Dictionary<int, CellState> cells, bool complete)
     {
         foreach (var shot in cells)
         {
@@ -109,14 +118,14 @@ public partial class Index
         await InvokeAsync(StateHasChanged);
     }
 
-    private async Task ClearField()
+    private async Task OnClearField()
     {
         _field = InitField(Player.FieldSize);
 
         await InvokeAsync(StateHasChanged);
     }
 
-    private async Task SetReady(bool obj)
+    private async Task OnSetReady(bool obj)
     {
         WaitingOpponent = true;
         SetOwnFieldState(false);
@@ -124,12 +133,20 @@ public partial class Index
         await InvokeAsync(StateHasChanged);
     }
 
-    private async Task GameStarted()
+    private async Task OnGameStarted()
     {
         IsStarted = true;
         _enemyField = InitField(Player.FieldSize);
         SetOwnFieldState(false);
         DisableEnemyField();
+
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task OnMoveTransition()
+    {
+        WaitingForShot = true;
+        EnableEnemyField();
 
         await InvokeAsync(StateHasChanged);
     }

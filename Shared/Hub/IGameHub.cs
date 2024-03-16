@@ -31,5 +31,7 @@ public interface IGameHub
 
     Task GameStarted();
 
+    Task MoveTransition();
+
     #endregion
 }
