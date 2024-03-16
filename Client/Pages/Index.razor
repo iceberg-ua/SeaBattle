@@ -19,11 +19,30 @@
                 <b>@Player.Name</b>
             </lable>
             <br />
-            <label>Welcome to the Sea Battle</label>
+            @if (!IsStarted)
+            {
+                <label>Welcome to the Sea Battle</label>
+                <div class="text-center mb-1">
+                    Now postion your ships and press <b>Ready</b> button
+                </div>
+            }
+            else
+            {
+                <div class="text-center mb-1">
+                    Battle is on!
+                </div>
 
-            <div class="text-center mb-1">
-                Now postion your ships and press <b>Ready</b> button
-            </div>
+                <div class="text-center mb-1">
+                    @if (WaitingForShot)
+                    {
+                        <b>It is your turn</b>
+                    }
+                    else
+                    {
+                        <b>Waitng for oponent's shot</b>
+                    }
+                </div>
+            }
             <div class="field-container">
                 <div class="@OwnFieldState">
                     <Battlefield Field="_field" FieldSize="Player.FieldSize" CellClicked="@FieldCellClicked" />
@@ -31,14 +50,14 @@
                 @if (IsStarted)
                 {
                     <div class="@EnemyFieldState">
-                        <Battlefield Field="_enemyField" FieldSize="Player.FieldSize"/>
+                        <Battlefield Field="_enemyField" FieldSize="Player.FieldSize" />
                     </div>
                 }
             </div>
 
             @if (!IsStarted)
             {
-                @if (!Waiting)
+                @if (!WaitingOpponent)
                 {
                     <div class="button-container">
                         <button class="btn btn-danger" disabled="@ClearButtonDisable" @onclick=ClearButtonClicked>Clear</button>

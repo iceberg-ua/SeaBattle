@@ -38,11 +38,13 @@ public partial class Index
 
     private bool IsStarted { get; set; } = false;
 
+    private bool WaitingForShot { get; set; } = false;
+
     private string OwnFieldState { get; set; } = "";
 
     private string EnemyFieldState { get; set; } = "";
 
-    private bool Waiting { get; set; } = false;
+    private bool WaitingOpponent { get; set; } = false;
 
     private CellState[] InitField(int size) => new CellState[size * size];
 
@@ -55,6 +57,10 @@ public partial class Index
     {
         EnemyFieldState = enabled ? "" : "hover-disabled";
     }
+
+    private void EnableEnemyField() => SetEnemyFieldState(true);
+
+    private void DisableEnemyField() => SetEnemyFieldState(false);
 
     #region Events
 
@@ -112,7 +118,7 @@ public partial class Index
 
     private async Task SetReady(bool obj)
     {
-        Waiting = true;
+        WaitingOpponent = true;
         SetOwnFieldState(false);
 
         await InvokeAsync(StateHasChanged);
@@ -122,6 +128,9 @@ public partial class Index
     {
         IsStarted = true;
         _enemyField = InitField(Player.FieldSize);
+        SetOwnFieldState(false);
+        DisableEnemyField();
+
         await InvokeAsync(StateHasChanged);
     }
 
