@@ -24,10 +24,12 @@ public partial class Index
         {
             BattleHub.On<PlayerInfo>(nameof(IGameHub.JoinedGame), OnJoinedGame);
             BattleHub.On<Dictionary<int, CellState>, bool>(nameof(IGameHub.UpdateCellState), OnUpdateField);
+            BattleHub.On<Dictionary<int, CellState>>(nameof(IGameHub.UpdateEnemyCellState), OnUpdateEnemyField);
             BattleHub.On(nameof(IGameHub.ClearField), OnClearField);
             BattleHub.On<bool>(nameof(IGameHub.SetReady), OnSetReady);
             BattleHub.On(nameof(IGameHub.GameStarted), OnGameStarted);
             BattleHub.On(nameof(IGameHub.MoveTransition), OnMoveTransition);
+            BattleHub.On<bool>(nameof(IGameHub.GameOver), OnGameOver);
         }
 
         base.OnAfterRender(firstRender);
@@ -113,7 +115,18 @@ public partial class Index
             _field[shot.Key] = shot.Value;
         }
 
-        FleetComplete = complete;
+        if(!IsStarted)
+            FleetComplete = complete;
+
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task OnUpdateEnemyField(Dictionary<int, CellState> cells)
+    {
+        foreach (var shot in cells)
+        {
+            _enemyField[shot.Key] = shot.Value;
+        }
 
         await InvokeAsync(StateHasChanged);
     }
@@ -147,6 +160,13 @@ public partial class Index
     {
         WaitingForShot = true;
         EnableEnemyField();
+
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task OnGameOver(bool win)
+    {
+        DisableEnemyField();
 
         await InvokeAsync(StateHasChanged);
     }

@@ -83,13 +83,30 @@ public class PlayerState
         return Field[pos] != prevState;
     }
 
-    public Dictionary<int, CellState> CheckShotResult(int x, int y)
+    public Dictionary<int, CellState>? CheckShotResult(int x, int y)
     {
-        //if (Fleet.Ships.Any(s => s.Contains())
-        //    return new Dictionary<int, CellState>() { { x * 10 + y, CellState.hit } };
-        //else
-        //    return new Dictionary<int, CellState>() { { x * 10 + y, CellState.miss } };
-        return [];
+        var ship = Fleet.Ships.FirstOrDefault(s => s.Any(deck => deck.HasPosition(x, y)));
+
+        if (ship == null)
+            return new Dictionary<int, CellState>() { { x * 10 + y, CellState.miss } };
+
+        var deck = ship.FirstOrDefault(d => d.HasPosition(x, y));
+
+        if (deck.State == CellState.hit)
+            return null;
+
+        var uDeck = deck with { State = CellState.hit };
+
+        ship.Remove(deck);
+        ship.Add(uDeck);
+
+        if (ship.All(d => d.State == CellState.hit))
+        {
+            Fleet.Ships.Remove(ship);
+            return new Dictionary<int, CellState>() { { x * 10 + y, CellState.hit } };
+        }
+        else
+            return new Dictionary<int, CellState>() { { x * 10 + y, CellState.hit } };
     }
 
     public void ClearField()

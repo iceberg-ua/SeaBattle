@@ -58,17 +58,30 @@ class BattleHub(GlobalGameStorage storage) : Hub<IGameHub>
 
         if (gameState.InProgress)
         {
-            //var enemyState = (gameState?.Players.FirstOrDefault(p => p.Key != playerId).Value) ?? throw new Exception("Couldn't find players game state");
-            //var shotResult = enemyState.CheckShotResult(x, y);
+            var oponent = (gameState?.Players.FirstOrDefault(p => p.Key != playerId)) ?? throw new Exception("Couldn't find players game state");
+            var oponentState = oponent.Value;
+            var playerState = gameState.Players[playerId];
+            var shotResult = oponentState.CheckShotResult(x, y);
 
-            //enemyState.Shots.Push((x, y));
+            if (shotResult != null)
+            {
+                playerState.Shots.Push((x, y));
 
-            //await Clients.Group(enemyState.PlayerId.ToString()).UpdateCellState(shotResult);
-            //await Clients.Group(playerId.ToString()).UpdateEnemyCellState(shotResult);
-            gameState.Players[playerId].InTurn = false;
-            var oponent = gameState.Players.Where(x => x.Key != playerId).FirstOrDefault();
-            oponent.Value.InTurn = true;
-            await Clients.Groups(oponent.Key.ToString()).MoveTransition();
+                await Clients.Group(oponent.Key.ToString()).UpdateCellState(shotResult, true);
+                await Clients.Group(playerId.ToString()).UpdateEnemyCellState(shotResult);
+
+                playerState.InTurn = false;
+                oponentState.InTurn = true;
+
+                if (oponentState.Fleet.Ships.Count == 0)
+                {
+                    await Clients.Groups(playerId.ToString()).GameOver(true);
+                    await Clients.Groups(oponent.Key.ToString()).GameOver(false);
+                    return;
+                }
+                else
+                    await Clients.Groups(oponent.Key.ToString()).MoveTransition();
+            }
         }
         else
         {

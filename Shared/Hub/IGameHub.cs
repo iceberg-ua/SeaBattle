@@ -33,5 +33,7 @@ public interface IGameHub
 
     Task MoveTransition();
 
+    Task GameOver(bool win);
+
     #endregion
 }
