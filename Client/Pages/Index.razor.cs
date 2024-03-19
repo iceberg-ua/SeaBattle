@@ -28,7 +28,7 @@ public partial class Index
             BattleHub.On(nameof(IGameHub.ClearField), OnClearField);
             BattleHub.On<bool>(nameof(IGameHub.SetReady), OnSetReady);
             BattleHub.On(nameof(IGameHub.GameStarted), OnGameStarted);
-            BattleHub.On(nameof(IGameHub.MoveTransition), OnMoveTransition);
+            BattleHub.On<bool>(nameof(IGameHub.MoveTransition), OnMoveTransition);
             BattleHub.On<bool>(nameof(IGameHub.GameOver), OnGameOver);
         }
 
@@ -75,12 +75,6 @@ public partial class Index
     private async void FieldCellClicked((int x, int y) cell)
     {
         await BattleHub?.SendAsync(nameof(IGameHub.CellClicked), Player.Id, cell.x, cell.y)!;
-
-        if (IsStarted)
-        {
-            DisableEnemyField();
-            WaitingForShot = false;
-        }
     }
 
     private async void ClearButtonClicked(MouseEventArgs e)
@@ -156,10 +150,18 @@ public partial class Index
         await InvokeAsync(StateHasChanged);
     }
 
-    private async Task OnMoveTransition()
+    private async Task OnMoveTransition(bool move)
     {
-        WaitingForShot = true;
-        EnableEnemyField();
+        if (move)
+        {
+            WaitingForShot = true;
+            EnableEnemyField();
+        }
+        else
+        {
+            DisableEnemyField();
+            WaitingForShot = false;
+        }
 
         await InvokeAsync(StateHasChanged);
     }

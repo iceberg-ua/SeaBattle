@@ -31,7 +31,7 @@ public interface IGameHub
 
     Task GameStarted();
 
-    Task MoveTransition();
+    Task MoveTransition(bool move);
 
     Task GameOver(bool win);
 

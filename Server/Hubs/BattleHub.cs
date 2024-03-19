@@ -48,7 +48,7 @@ class BattleHub(GlobalGameStorage storage) : Hub<IGameHub>
             await Clients.Group(gameState.ID.ToString()).GameStarted();
 
             var randomPlayer = gameState.Players.Keys.ElementAt(Random.Shared.Next(0, gameState.Players.Count));
-            await Clients.Groups(randomPlayer.ToString()).MoveTransition();
+            await Clients.Groups(randomPlayer.ToString()).MoveTransition(true);
         }
     }
 
@@ -58,9 +58,14 @@ class BattleHub(GlobalGameStorage storage) : Hub<IGameHub>
 
         if (gameState.InProgress)
         {
-            var oponent = (gameState?.Players.FirstOrDefault(p => p.Key != playerId)) ?? throw new Exception("Couldn't find players game state");
-            var oponentState = oponent.Value;
             var playerState = gameState.Players[playerId];
+
+            if (playerState.Shots.Contains((x, y)))
+                return;
+
+            var oponent = gameState?.Players.FirstOrDefault(p => p.Key != playerId) ?? throw new Exception("Couldn't find players game state");
+            var oponentState = oponent.Value;
+
             var shotResult = oponentState.CheckShotResult(x, y);
 
             if (shotResult != null)
@@ -80,7 +85,10 @@ class BattleHub(GlobalGameStorage storage) : Hub<IGameHub>
                     return;
                 }
                 else
-                    await Clients.Groups(oponent.Key.ToString()).MoveTransition();
+                {
+                    await Clients.Groups(oponent.Key.ToString()).MoveTransition(true);
+                    await Clients.Groups(playerId.ToString()).MoveTransition(false);
+                }
             }
         }
         else
