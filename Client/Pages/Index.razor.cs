@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.SignalR.Client;
 using SeaBattle.Shared;
 using SeaBattle.Shared.Hub;
 using SeaBattle.Shared.Player;
+using System.Security;
 
 namespace SeaBattle.Client.Pages;
 
@@ -17,6 +18,10 @@ public partial class Index
 
     public CellState[] _field = default!;
     public CellState[] _enemyField = default!;
+
+    public bool _gameIsOver = false;
+    public string _gameOverString = string.Empty;
+    public string _gameOverClass = string.Empty;
 
     protected override void OnAfterRender(bool firstRender)
     {
@@ -169,6 +174,11 @@ public partial class Index
     private async Task OnGameOver(bool win)
     {
         DisableEnemyField();
+
+        var resultMsg = win ? "WIN" : "LOST";
+        _gameOverString = $"Game over! You {resultMsg}";
+        _gameOverClass = resultMsg.ToLower();
+        _gameIsOver = true;
 
         await InvokeAsync(StateHasChanged);
     }

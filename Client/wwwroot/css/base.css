@@ -36,3 +36,11 @@
 .hover-disabled {
     pointer-events: none;
 }
+
+.win {
+    color: green;
+}
+
+.lost {
+    color: orangered;
+}

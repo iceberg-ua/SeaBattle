@@ -84,7 +84,7 @@ class BattleHub(GlobalGameStorage storage) : Hub<IGameHub>
                     await Clients.Groups(oponent.Key.ToString()).GameOver(false);
                     return;
                 }
-                else
+                else if(!shotResult.Any(s => s.Value == CellState.hit))
                 {
                     await Clients.Groups(oponent.Key.ToString()).MoveTransition(true);
                     await Clients.Groups(playerId.ToString()).MoveTransition(false);

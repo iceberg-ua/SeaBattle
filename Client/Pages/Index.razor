@@ -32,21 +32,31 @@
             }
             else
             {
-                <div class="text-center mb-1">
-                    Battle is on!
-                </div>
+                if (_gameIsOver)
+                {
+                    <div class="text-center mb-1 @_gameOverClass">
+                        <h2>@_gameOverString</h2>
+                    </div>
+                }
+                else
+                {
+                    <div class="text-center mb-1">
+                        Battle is on!
+                    </div>
 
-                <div class="text-center mb-1">
-                    @if (WaitingForShot)
-                    {
-                        <b>It is your shot</b>
-                    }
-                    else
-                    {
-                        <b>Waitng for oponent's shot</b>
-                    }
-                </div>
+                    <div class="text-center mb-1">
+                        @if (WaitingForShot)
+                        {
+                            <b>It is your shot</b>
+                        }
+                        else
+                        {
+                            <b>Waitng for oponent's shot</b>
+                        }
+                    </div>
+                }
             }
+
             <div class="field-container">
                 <div class="@OwnFieldState">
                     <Battlefield Field="_field" FieldSize="Player.FieldSize" CellClicked="@FieldCellClicked" />
