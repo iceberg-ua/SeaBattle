@@ -2,6 +2,8 @@ using SeaBattle.Shared.Player;
 
 namespace SeaBattle.Shared;
 
+public enum CellState { empty = 0, ship, hit, miss }
+
 public class GameState
 {
     public GameState()
