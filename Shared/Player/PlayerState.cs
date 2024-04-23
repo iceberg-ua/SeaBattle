@@ -40,12 +40,14 @@ public class PlayerState
 
     #endregion
 
-    private CellState GetCell(int x, int y) => Field[x * 10 + y];
+    private int CellIndex(int x, int y) => x * FieldSize + y;
+
+    private CellState GetCell(int x, int y) => Field[CellIndex(x, y)];
 
     private bool CellIsOccupied(int x, int y) => x >= 0 && x < FieldSize &&
                                                  y >= 0 && y < FieldSize && GetCell(x, y) == CellState.ship;
 
-    private void SetCell(int x, int y, CellState value) => Field[x * 10 + y] = value;
+    private void SetCell(int x, int y, CellState value) => Field[CellIndex(x, y)] = value;
 
     private bool OnDiagonal(int x, int y) => CellIsOccupied(x - 1, y - 1) || CellIsOccupied(x + 1, y - 1) ||
                                              CellIsOccupied(x - 1, y + 1) || CellIsOccupied(x + 1, y + 1);
@@ -88,7 +90,7 @@ public class PlayerState
         var ship = Fleet.Ships.FirstOrDefault(s => s.Any(deck => deck.HasPosition(x, y)));
 
         if (ship == null)
-            return new Dictionary<int, CellState>() { { x * 10 + y, CellState.miss } };
+            return new Dictionary<int, CellState>() { { CellIndex(x, y), CellState.miss } };
 
         var deck = ship.FirstOrDefault(d => d.HasPosition(x, y));
 
@@ -103,10 +105,37 @@ public class PlayerState
         if (ship.All(d => d.State == CellState.hit))
         {
             Fleet.Ships.Remove(ship);
-            return new Dictionary<int, CellState>() { { x * 10 + y, CellState.hit } };
+            var result = new Dictionary<int, CellState>() { { CellIndex(x, y), CellState.hit } };
+            int index;
+
+            foreach (var shipDeck in ship)
+            {
+                int xc = shipDeck.X, yc = shipDeck.Y;
+
+                for (int i = xc - 1; i <= xc + 1; i++)
+                {
+                    if (i < 0 || i >= FieldSize)
+                        continue;
+
+                    for (int j = yc - 1; j <= yc + 1; j++)
+                    {
+                        if (j < 0 || j >= FieldSize ||
+                           (i == xc && j == yc))
+                            continue;
+
+                        index = CellIndex(i,j);
+
+                        if (Field[index] == CellState.empty && !result.ContainsKey(index))
+                            result.TryAdd(index, CellState.miss);
+
+                    }
+                }
+            }
+
+            return result;
         }
         else
-            return new Dictionary<int, CellState>() { { x * 10 + y, CellState.hit } };
+            return new Dictionary<int, CellState>() { { CellIndex(x, y), CellState.hit } };
     }
 
     public void ClearField()
