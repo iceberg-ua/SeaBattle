@@ -1,0 +1,17 @@
+﻿@* <Battlefield Field="_field" FieldSize="Player.FieldSize" CellClicked="@FieldCellClicked" />
+
+@if (!Waiting)
+{
+    <div class="button-container">
+        <button class="btn btn-danger" disabled="@ClearButtonDisable" @onclick=ClearButtonClicked>Clear</button>
+        <button class="btn btn-success" disabled="@(!FleetComplete)" @onclick=OnReadyButtonClick>Ready</button>
+    </div>
+}
+else
+{
+    <h3>Waiting for an opponent</h3>
+} *@
+
+@code {
+    public bool Waiting { get; set; }
+}

@@ -4,7 +4,6 @@ using Microsoft.AspNetCore.SignalR.Client;
 using SeaBattle.Shared;
 using SeaBattle.Shared.Hub;
 using SeaBattle.Shared.Player;
-using System.Security;
 
 namespace SeaBattle.Client.Pages;
 

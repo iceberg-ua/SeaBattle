@@ -47,3 +47,9 @@ public class GameState
 // * introduce mode property which will handle cell click (preparing mode, battle mode)
 // * refresh after game was over shows wrong state
 // * after each move show the text result in a lable
+
+
+// show name of the opponent
+// show the rest of the fleet to shot down/to place
+// better indicate change 
+// show the rest of the opponents fleet after game change
