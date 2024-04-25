@@ -17,7 +17,7 @@ public interface IGameHub
 
     #region Server reponse (handled on client)
 
-    Task JoinedGame(PlayerInfo player);
+    Task JoinedGame(PlayerInfo? player);
 
     Task UpdateCellState(Dictionary<int, CellState> hits, bool full);
 

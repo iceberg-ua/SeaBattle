@@ -1,0 +1,15 @@
+﻿@page "/sign-in"
+@using Microsoft.AspNetCore.SignalR.Client
+@using SeaBattle.Shared.Hub
+
+<LoginComponent OnJoinButtonClick="JoinButtonClicked" />
+
+@code{
+    [CascadingParameter]
+    public HubConnection BattleHub { get; set; } = default!;
+
+    private async Task JoinButtonClicked(string userName)
+    {
+        await BattleHub?.SendAsync(nameof(IGameHub.JoinGame), Guid.Empty, userName)!;
+    }
+}

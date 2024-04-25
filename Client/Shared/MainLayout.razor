@@ -2,15 +2,21 @@
 @using SeaBattle.Client.Services
 @using SeaBattle.Shared.Hub;
 @using SeaBattle.Shared.Player
+
 @inject NavigationManager Navigation
 @inject ILocalStorageService LocalStorage
 
 @implements IAsyncDisposable
 
 <CascadingValue Value="BattleHub" IsFixed=true>
-    <main>
-        @Body
-    </main>
+    <CascadingValue Value="Player">
+        @if (Player != null)
+        {
+            <main>
+                @Body
+            </main>
+        }
+    </CascadingValue>
 </CascadingValue>
 
 
@@ -27,16 +33,10 @@
             .WithUrl(Navigation.ToAbsoluteUri("/battlehub"))
             .Build();
 
-        await BattleHub.StartAsync();
-    }
+        BattleHub.On<PlayerInfo>(nameof(IGameHub.JoinedGame), OnJoinedGame);
 
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        if (firstRender)
-        {
-            await TryGetPlayerState();
-            StateHasChanged();
-        }
+        await BattleHub.StartAsync();
+        await TryGetPlayerState();
     }
 
     #region Hub Handlers
@@ -49,6 +49,19 @@
         {
             await BattleHub?.SendAsync(nameof(IGameHub.JoinGame), id, "")!;
         }
+    }
+
+    private async Task OnJoinedGame(PlayerInfo player)
+    {
+        Player = player;
+
+        if (Player != null)
+        {
+            await LocalStorage.SetItemAsync("player", player.Id);
+            await InvokeAsync(StateHasChanged);
+        }
+        else
+            Navigation.NavigateTo("/sign-in");
     }
 
     #endregion

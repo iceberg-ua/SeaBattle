@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.SignalR;
 using SeaBattle.Shared;
 using SeaBattle.Shared.Hub;
+using SeaBattle.Shared.Player;
 
 namespace SeaBattle.Server.Hubs;
 
@@ -12,27 +13,24 @@ class BattleHub(GlobalGameStorage storage) : Hub<IGameHub>
 
     public async Task JoinGame(Guid playerId, string playerName)
     {
-        GameState? gameState = playerId == Guid.Empty ? GameStorage.CreateGame() :
-                                                        GameStorage.GetGameByPlayerId(playerId);
-
-        if (gameState == null)
+        GameState? gameState = GameStorage.GetGameByPlayerId(playerId);   
+        PlayerInfo? playerInfo = null;
+        
+        if(gameState is null)
         {
-            Console.WriteLine("Not game found");
-            return;
+            if(!string.IsNullOrEmpty(playerName))
+            {
+                gameState = GameStorage.CreateGame();
+                playerInfo = gameState.AddPlayer(playerName).GetPlayerInfo();
+            }
+        }
+        else
+        {
+            gameState.Players.TryGetValue(playerId, out var playerState);
+            playerInfo = playerState?.GetPlayerInfo();
         }
 
-        if (!gameState.Players.TryGetValue(playerId, out var playerState) && !string.IsNullOrEmpty(playerName))
-            playerState = gameState.AddPlayer(playerName);
-
-        if (playerState != null)
-        {
-            await Groups.AddToGroupAsync(Context.ConnectionId, playerState.TableId.ToString());
-            await Groups.AddToGroupAsync(Context.ConnectionId, playerState.PlayerId.ToString());
-
-            var info = playerState.GetPlayerInfo();
-
-            await Clients.Caller.JoinedGame(info);
-        }
+        await Clients.Caller.JoinedGame(playerInfo);
     }
 
     public async Task PlayerReady(Guid playerId)

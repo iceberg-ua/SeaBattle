@@ -26,7 +26,6 @@ public partial class Index
     {
         if (firstRender)
         {
-            BattleHub.On<PlayerInfo>(nameof(IGameHub.JoinedGame), OnJoinedGame);
             BattleHub.On<Dictionary<int, CellState>, bool>(nameof(IGameHub.UpdateCellState), OnUpdateField);
             BattleHub.On<Dictionary<int, CellState>>(nameof(IGameHub.UpdateEnemyCellState), OnUpdateEnemyField);
             BattleHub.On(nameof(IGameHub.ClearField), OnClearField);
@@ -34,6 +33,8 @@ public partial class Index
             BattleHub.On(nameof(IGameHub.GameStarted), OnGameStarted);
             BattleHub.On<bool>(nameof(IGameHub.MoveTransition), OnMoveTransition);
             BattleHub.On<bool>(nameof(IGameHub.GameOver), OnGameOver);
+
+            _field = InitField(Player.FieldSize);
         }
 
         base.OnAfterRender(firstRender);
@@ -71,11 +72,6 @@ public partial class Index
 
     #region Events
 
-    private async Task JoinButtonClicked(string userName)
-    {
-        await BattleHub?.SendAsync(nameof(IGameHub.JoinGame), Guid.Empty, userName)!;
-    }
-
     private async void FieldCellClicked((int x, int y) cell)
     {
         await BattleHub?.SendAsync(nameof(IGameHub.CellClicked), Player.Id, cell.x, cell.y)!;
@@ -96,15 +92,6 @@ public partial class Index
     #endregion
 
     #region Hub API
-
-    private async Task OnJoinedGame(PlayerInfo player)
-    {
-        Player = player;
-        _field = InitField(Player.FieldSize);
-
-        await LocalStorage.SetItemAsync("player", player.Id);
-        await InvokeAsync(StateHasChanged);
-    }
 
     private async Task OnUpdateField(Dictionary<int, CellState> cells, bool complete)
     {
