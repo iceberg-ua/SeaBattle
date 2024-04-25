@@ -33,7 +33,9 @@ public partial class Index
             BattleHub.On(nameof(IGameHub.GameStarted), OnGameStarted);
             BattleHub.On<bool>(nameof(IGameHub.MoveTransition), OnMoveTransition);
             BattleHub.On<bool>(nameof(IGameHub.GameOver), OnGameOver);
-
+        }
+        else if(Player != null && _field == null)
+        {
             _field = InitField(Player.FieldSize);
         }
 

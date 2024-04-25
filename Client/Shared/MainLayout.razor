@@ -10,12 +10,9 @@
 
 <CascadingValue Value="BattleHub" IsFixed=true>
     <CascadingValue Value="Player">
-        @if (Player != null)
-        {
-            <main>
-                @Body
-            </main>
-        }
+        <main>
+            @Body
+        </main>
     </CascadingValue>
 </CascadingValue>
 
@@ -58,7 +55,7 @@
         if (Player != null)
         {
             await LocalStorage.SetItemAsync("player", player.Id);
-            await InvokeAsync(StateHasChanged);
+            Navigation.NavigateTo("/");
         }
         else
             Navigation.NavigateTo("/sign-in");
