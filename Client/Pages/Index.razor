@@ -5,81 +5,77 @@
 @using SeaBattle.Shared.Player
 
 @inject IJSRuntime JsRuntime
-@inject ILocalStorageService LocalStorage
 
-@if(Player != null)
-{
-    <div class="container centered-form">
-        <div class="text-center mb-3">
-            <lable class="mb-5">
-                <b>@Player.Name</b>
-            </lable>
-            <br />
-            @if (!IsStarted)
+<div class="container centered-form">
+    <div class="text-center mb-3">
+        <lable class="mb-5">
+            <b>@Player.Name</b>
+        </lable>
+        <br />
+        @if (!IsStarted)
+        {
+            <label>Welcome to the Sea Battle</label>
+
+            @if (!WaitingOpponent)
             {
-                <label>Welcome to the Sea Battle</label>
-
-                @if (!WaitingOpponent)
-                {
-                    <div class="text-center mb-1">
-                        Now postion your ships and press <b>Ready</b> button
-                    </div>
-                }
+                <div class="text-center mb-1">
+                    Now postion your ships and press <b>Ready</b> button
+                </div>
+            }
+        }
+        else
+        {
+            if (_gameIsOver)
+            {
+                <div class="text-center mb-1 @_gameOverClass">
+                    <h2>@_gameOverString</h2>
+                </div>
             }
             else
             {
-                if (_gameIsOver)
-                {
-                    <div class="text-center mb-1 @_gameOverClass">
-                        <h2>@_gameOverString</h2>
-                    </div>
-                }
-                else
-                {
-                    <div class="text-center mb-1">
-                        Battle is on!
-                    </div>
-
-                    <div class="text-center mb-1">
-                        @if (WaitingForShot)
-                        {
-                            <b>It is your shot</b>
-                        }
-                        else
-                        {
-                            <b>Waitng for oponent's shot</b>
-                        }
-                    </div>
-                }
-            }
-
-            <div class="field-container">
-                <div class="@OwnFieldState">
-                    <Battlefield Field="_field" FieldSize="Player.FieldSize" CellClicked="@FieldCellClicked" />
+                <div class="text-center mb-1">
+                    Battle is on!
                 </div>
-                @if (IsStarted)
-                {
-                    <div class="@EnemyFieldState">
-                        <Battlefield Field="_enemyField" FieldSize="Player.FieldSize" CellClicked="@FieldCellClicked" />
-                    </div>
-                }
-            </div>
 
-            @if (!IsStarted)
+                <div class="text-center mb-1">
+                    @if (WaitingForShot)
+                    {
+                        <b>It is your shot</b>
+                    }
+                    else
+                    {
+                        <b>Waitng for oponent's shot</b>
+                    }
+                </div>
+            }
+        }
+
+        <div class="field-container">
+            <div class="@OwnFieldState">
+                <Battlefield Field="_field" FieldSize="Player.FieldSize" CellClicked="@FieldCellClicked" />
+            </div>
+            @if (IsStarted)
             {
-                @if (!WaitingOpponent)
-                {
-                    <div class="button-container">
-                        <button class="btn btn-danger" disabled="@ClearButtonDisable" @onclick=ClearButtonClicked>Clear</button>
-                        <button class="btn btn-success" disabled="@(!FleetComplete)" @onclick=OnReadyButtonClick>Ready</button>
-                    </div>
-                }
-                else
-                {
-                    <h3>Waiting for an opponent</h3>
-                }
+                <div class="@EnemyFieldState">
+                    <Battlefield Field="_enemyField" FieldSize="Player.FieldSize" CellClicked="@FieldCellClicked" />
+                </div>
             }
         </div>
+
+        @if (!IsStarted)
+        {
+            @if (!WaitingOpponent)
+            {
+                <div class="button-container">
+                    <button class="btn btn-danger" disabled="@ClearButtonDisable" @onclick=ClearButtonClicked>Clear</button>
+                    <button class="btn btn-success" disabled="@(!FleetComplete)" @onclick=OnReadyButtonClick>Ready</button>
+                </div>
+            }
+            else
+            {
+                <h3>Waiting for an opponent</h3>
+            }
+        }
     </div>
-}
+</div>
 

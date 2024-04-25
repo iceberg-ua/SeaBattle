@@ -22,27 +22,23 @@ public partial class Index
     public string _gameOverString = string.Empty;
     public string _gameOverClass = string.Empty;
 
-    protected override void OnAfterRender(bool firstRender)
+    protected override Task OnInitializedAsync()
     {
-        if (firstRender)
-        {
-            BattleHub.On<Dictionary<int, CellState>, bool>(nameof(IGameHub.UpdateCellState), OnUpdateField);
-            BattleHub.On<Dictionary<int, CellState>>(nameof(IGameHub.UpdateEnemyCellState), OnUpdateEnemyField);
-            BattleHub.On(nameof(IGameHub.ClearField), OnClearField);
-            BattleHub.On<bool>(nameof(IGameHub.SetReady), OnSetReady);
-            BattleHub.On(nameof(IGameHub.GameStarted), OnGameStarted);
-            BattleHub.On<bool>(nameof(IGameHub.MoveTransition), OnMoveTransition);
-            BattleHub.On<bool>(nameof(IGameHub.GameOver), OnGameOver);
-        }
-        else if(Player != null && _field == null)
-        {
-            _field = InitField(Player.FieldSize);
-        }
+        BattleHub.On<Dictionary<int, CellState>, bool>(nameof(IGameHub.UpdateCellState), OnUpdateField);
+        BattleHub.On<Dictionary<int, CellState>>(nameof(IGameHub.UpdateEnemyCellState), OnUpdateEnemyField);
+        BattleHub.On(nameof(IGameHub.ClearField), OnClearField);
+        BattleHub.On<bool>(nameof(IGameHub.SetReady), OnSetReady);
+        BattleHub.On(nameof(IGameHub.GameStarted), OnGameStarted);
+        BattleHub.On<bool>(nameof(IGameHub.MoveTransition), OnMoveTransition);
+        BattleHub.On<bool>(nameof(IGameHub.GameOver), OnGameOver);
 
-        base.OnAfterRender(firstRender);
+        _field = InitField(Player.FieldSize);
+
+        return base.OnInitializedAsync();
     }
 
-    private bool ClearButtonDisable => _field.All(c => c == CellState.empty);
+
+    private bool ClearButtonDisable => _field is not null && _field.All(c => c == CellState.empty);
 
     private bool FleetComplete { get; set; } = false;
 

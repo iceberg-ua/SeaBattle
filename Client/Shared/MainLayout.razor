@@ -9,11 +9,14 @@
 @implements IAsyncDisposable
 
 <CascadingValue Value="BattleHub" IsFixed=true>
-    <CascadingValue Value="Player">
-        <main>
-            @Body
-        </main>
-    </CascadingValue>
+    @if (_initialized)
+    {
+        <CascadingValue Value="Player">
+            <main>
+                @Body
+            </main>
+        </CascadingValue>
+    }
 </CascadingValue>
 
 
@@ -23,6 +26,8 @@
 
     public PlayerInfo Player { get; private set; } = default!;
     public HubConnection BattleHub { get; private set; } = default!;
+
+    private bool _initialized = false;
 
     protected async override Task OnInitializedAsync()
     {
@@ -50,6 +55,7 @@
 
     private async Task OnJoinedGame(PlayerInfo player)
     {
+        _initialized = true;
         Player = player;
 
         if (Player != null)
