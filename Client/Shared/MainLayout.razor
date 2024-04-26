@@ -46,11 +46,11 @@
     private async Task TryGetPlayerState()
     {
         var playerId = await LocalStorage.GetItemAsync("player");
+        Guid id = Guid.Empty;
 
-        if (Guid.TryParse(playerId, out Guid id))
-        {
-            await BattleHub?.SendAsync(nameof(IGameHub.JoinGame), id, "")!;
-        }
+        Guid.TryParse(playerId, out id);
+
+        await BattleHub?.SendAsync(nameof(IGameHub.JoinGame), id, "")!;
     }
 
     private async Task OnJoinedGame(PlayerInfo player)
