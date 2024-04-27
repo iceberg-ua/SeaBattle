@@ -30,6 +30,12 @@ class BattleHub(GlobalGameStorage storage) : Hub<IGameHub>
             playerInfo = playerState?.GetPlayerInfo();
         }
 
+        if(playerInfo is not null)
+        {
+            await Groups.AddToGroupAsync(Context.ConnectionId, gameState!.ID.ToString());
+            await Groups.AddToGroupAsync(Context.ConnectionId, playerInfo.Id.ToString());
+        }
+
         await Clients.Caller.JoinedGame(playerInfo);
     }
 
