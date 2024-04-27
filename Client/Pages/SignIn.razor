@@ -2,9 +2,11 @@
 @using Microsoft.AspNetCore.SignalR.Client
 @using SeaBattle.Shared.Hub
 
-<LoginComponent OnJoinButtonClick="JoinButtonClicked" />
+<div class="container centered-form">
+    <LoginComponent OnJoinButtonClick="JoinButtonClicked" />
+</div>
 
-@code{
+@code {
     [CascadingParameter]
     public HubConnection BattleHub { get; set; } = default!;
 
