@@ -21,6 +21,8 @@ public class GameState
 
     public Dictionary<Guid, PlayerState> Players { get; set; } = new(2);
 
+    public PlayerState? PlayerInTurn { get; set; } = null;
+
     public PlayerState AddPlayer(string playerName)
     {
         if (Players.Count >= 2)

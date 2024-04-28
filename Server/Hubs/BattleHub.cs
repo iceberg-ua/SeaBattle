@@ -79,13 +79,14 @@ class BattleHub(GlobalGameStorage storage) : Hub<IGameHub>
                 await Clients.Group(oponent.Key.ToString()).UpdateCellState(shotResult, true);
                 await Clients.Group(playerId.ToString()).UpdateEnemyCellState(shotResult);
 
-                playerState.InTurn = false;
-                oponentState.InTurn = true;
+                gameState.PlayerInTurn = oponentState;
 
                 if (oponentState.Fleet.Ships.Count == 0)
                 {
+                    gameState.PlayerInTurn = null;
                     await Clients.Groups(playerId.ToString()).GameOver(true);
                     await Clients.Groups(oponent.Key.ToString()).GameOver(false);
+
                     return;
                 }
                 else if(!shotResult.Any(s => s.Value == CellState.hit))

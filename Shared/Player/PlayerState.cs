@@ -28,8 +28,6 @@ public class PlayerState
 
     public int FieldSize => _fieldSize;
 
-    public bool InTurn { get; set; } = false;
-
     public bool Ready { get; set; } = false;
 
     public CellState[] Field { get; private set; }
