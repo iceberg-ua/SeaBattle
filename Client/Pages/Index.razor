@@ -8,47 +8,8 @@
 
 <div class="container centered-form">
     <div class="text-center mb-3">
-        <lable class="mb-5">
-            <b>@Player.Name</b>
-        </lable>
-        <br />
-        @if (!IsStarted)
-        {
-            <label>Welcome to the Sea Battle</label>
-
-            @if (!WaitingOpponent)
-            {
-                <div class="text-center mb-1">
-                    Now postion your ships and press <b>Ready</b> button
-                </div>
-            }
-        }
-        else
-        {
-            if (_gameIsOver)
-            {
-                <div class="text-center mb-1 @_gameOverClass">
-                    <h2>@_gameOverString</h2>
-                </div>
-            }
-            else
-            {
-                <div class="text-center mb-1">
-                    Battle is on!
-                </div>
-
-                <div class="text-center mb-1">
-                    @if (WaitingForShot)
-                    {
-                        <b>It is your shot</b>
-                    }
-                    else
-                    {
-                        <b>Waitng for oponent's shot</b>
-                    }
-                </div>
-            }
-        }
+        
+        <HeaderComponent></HeaderComponent>
 
         <div class="field-container">
             <div class="@OwnFieldState">

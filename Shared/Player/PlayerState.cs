@@ -64,12 +64,12 @@ public class PlayerState
             }
         }
 
-        return new(PlayerId, Name, _fieldSize, fieldState); ;
+        return new(PlayerId, Name, "", _fieldSize, fieldState); ;
     }
 
     public bool TryToUpdateState(int x, int y)
     {
-        var pos = x * FieldSize + y;
+        var pos = CellIndex(x, y);
         var prevState = Field[pos];
 
         if (CellIsOccupied(x, y))
@@ -92,12 +92,14 @@ public class PlayerState
         if (ship == null)
             return new Dictionary<int, CellState>() { { CellIndex(x, y), CellState.miss } };
 
-        var deck = ship.FirstOrDefault(d => d.HasPosition(x, y));
+        var deck = ship.FirstOrDefault(d => d.HasPosition(x, y))!;
 
         if (deck.State == CellState.hit)
             return null;
 
         var uDeck = deck with { State = CellState.hit };
+
+        Field[CellIndex(x, y)] = CellState.hit;
 
         ship.Remove(deck);
         ship.Add(uDeck);
@@ -126,7 +128,10 @@ public class PlayerState
                         index = CellIndex(i,j);
 
                         if (Field[index] == CellState.empty && !result.ContainsKey(index))
+                        {
+                            Field[index] = CellState.miss;
                             result.TryAdd(index, CellState.miss);
+                        }
 
                     }
                 }
