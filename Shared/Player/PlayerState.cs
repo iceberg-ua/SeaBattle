@@ -2,6 +2,15 @@
 
 namespace SeaBattle.Shared.Player;
 
+/// <summary>
+/// Event arguments for when a ship is destroyed
+/// </summary>
+public class ShipDestroyedEventArgs : EventArgs
+{
+    public Ship DestroyedShip { get; }
+    public ShipDestroyedEventArgs(Ship ship) => DestroyedShip = ship;
+}
+
 public class PlayerState
 {
     private readonly int _fieldSize;
@@ -35,6 +44,11 @@ public class PlayerState
     public Fleet Fleet { get; private set; } = new();
 
     public Stack<(int, int)> Shots { get; }
+
+    /// <summary>
+    /// Fired when a ship is completely destroyed
+    /// </summary>
+    public event EventHandler<ShipDestroyedEventArgs>? ShipDestroyed;
 
     #endregion
 
@@ -83,62 +97,109 @@ public class PlayerState
         return Field[pos] != prevState;
     }
 
+    /// <summary>
+    /// Processes a shot at the specified coordinates and returns the resulting cell state changes
+    /// </summary>
+    /// <param name="x">X coordinate of the shot</param>
+    /// <param name="y">Y coordinate of the shot</param>
+    /// <returns>Dictionary of affected cells and their new states, or null if shot is invalid</returns>
     public Dictionary<int, CellState>? CheckShotResult(int x, int y)
     {
+        if (x < 0 || x >= FieldSize || y < 0 || y >= FieldSize)
+            throw new ArgumentOutOfRangeException($"Shot coordinates ({x},{y}) are outside the field");
+
+        // Find if any ship occupies the target coordinates
         var ship = Fleet.Ships.FirstOrDefault(s => s.Any(deck => deck.HasPosition(x, y)));
 
+        // Case 1: Miss - no ship at coordinates
         if (ship == null)
             return new Dictionary<int, CellState>() { { CellIndex(x, y), CellState.miss } };
 
+        // Find the specific deck (ship segment) that was hit
         var deck = ship.FirstOrDefault(d => d.HasPosition(x, y))!;
 
+        // Case 2: Already hit - return null to indicate invalid shot
         if (deck.State == CellState.hit)
             return null;
 
-        var uDeck = deck with { State = CellState.hit };
+        // Update the hit deck's state
+        var updatedDeck = deck with { State = CellState.hit };
+        UpdateShipDeck(ship, deck, updatedDeck);
 
-        Field[CellIndex(x, y)] = CellState.hit;
-
-        ship.Remove(deck);
-        ship.Add(uDeck);
-
+        // Check if the entire ship is destroyed
         if (ship.All(d => d.State == CellState.hit))
         {
             Fleet.Ships.Remove(ship);
-            var result = new Dictionary<int, CellState>() { { CellIndex(x, y), CellState.hit } };
-            int index;
+            var result = HandleShipDestruction(ship, x, y);
+            ShipDestroyed?.Invoke(this, new ShipDestroyedEventArgs(ship));
+            return result;
+        }
 
-            foreach (var shipDeck in ship)
+        // Case 3: Hit but ship not destroyed
+        return new Dictionary<int, CellState>() { { CellIndex(x, y), CellState.hit } };
+    }
+
+    /// <summary>
+    /// Updates a ship's deck after being hit
+    /// </summary>
+    private void UpdateShipDeck(Ship ship, ShipDeck oldDeck, ShipDeck newDeck)
+    {
+        Field[CellIndex(oldDeck.X, oldDeck.Y)] = CellState.hit;
+        ship.Remove(oldDeck);
+        ship.Add(newDeck);
+    }
+
+    /// <summary>
+    /// Handles the destruction of a ship and updates surrounding cells
+    /// </summary>
+    private Dictionary<int, CellState> HandleShipDestruction(Ship ship, int hitX, int hitY)
+    {
+        var result = new Dictionary<int, CellState>() { { CellIndex(hitX, hitY), CellState.hit } };
+        MarkAdjacentCells(ship, result);
+        return result;
+    }
+
+    /// <summary>
+    /// Marks all valid adjacent cells around a ship as misses
+    /// </summary>
+    private void MarkAdjacentCells(Ship ship, Dictionary<int, CellState> result)
+    {
+        foreach (var deck in ship)
+        {
+            for (int i = deck.X - 1; i <= deck.X + 1; i++)
             {
-                int xc = shipDeck.X, yc = shipDeck.Y;
-
-                for (int i = xc - 1; i <= xc + 1; i++)
+                for (int j = deck.Y - 1; j <= deck.Y + 1; j++)
                 {
-                    if (i < 0 || i >= FieldSize)
-                        continue;
-
-                    for (int j = yc - 1; j <= yc + 1; j++)
+                    if (IsValidAdjacentCell(i, j, deck.X, deck.Y))
                     {
-                        if (j < 0 || j >= FieldSize ||
-                           (i == xc && j == yc))
-                            continue;
-
-                        index = CellIndex(i,j);
-
-                        if (Field[index] == CellState.empty && !result.ContainsKey(index))
-                        {
-                            Field[index] = CellState.miss;
-                            result.TryAdd(index, CellState.miss);
-                        }
-
+                        MarkCellAsMiss(i, j, result);
                     }
                 }
             }
-
-            return result;
         }
-        else
-            return new Dictionary<int, CellState>() { { CellIndex(x, y), CellState.hit } };
+    }
+
+    /// <summary>
+    /// Checks if a cell is valid for marking as a miss
+    /// </summary>
+    private bool IsValidAdjacentCell(int x, int y, int shipX, int shipY)
+    {
+        return x >= 0 && x < FieldSize &&
+               y >= 0 && y < FieldSize &&
+               !(x == shipX && y == shipY);
+    }
+
+    /// <summary>
+    /// Marks a cell as a miss if it's empty and not already in the result
+    /// </summary>
+    private void MarkCellAsMiss(int x, int y, Dictionary<int, CellState> result)
+    {
+        int index = CellIndex(x, y);
+        if (Field[index] == CellState.empty && !result.ContainsKey(index))
+        {
+            Field[index] = CellState.miss;
+            result.TryAdd(index, CellState.miss);
+        }
     }
 
     public void ClearField()
