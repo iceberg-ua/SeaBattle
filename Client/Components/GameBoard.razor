@@ -1,11 +1,7 @@
 <div class="field-container">
-    <div class="@OwnFieldState">
-        <Battlefield Field=@Field FieldSize=@FieldSize CellClicked=@OnCellClicked />
-    </div>
+    <Battlefield Field=@Field FieldSize=@FieldSize CellClicked=@OnCellClicked Disabled="OwnFieldDisabled"/>
     @if (GameStarted)
     {
-        <div class="@EnemyFieldState">
-            <Battlefield Field=@EnemyField FieldSize=@FieldSize CellClicked=@OnCellClicked />
-        </div>
+        <Battlefield Field=@EnemyField FieldSize=@FieldSize CellClicked=@OnCellClicked Disabled="EnemyFieldDisabled"/>
     }
 </div>

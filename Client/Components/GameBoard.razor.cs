@@ -24,9 +24,9 @@ public partial class GameBoard
     [Parameter]
     public Index.GameStateEnum CurrentState { get; set; } = Index.GameStateEnum.Waiting;
 
-    private string OwnFieldState => CurrentState is Index.GameStateEnum.Setup ? "" : "hover-disabled";
+    private bool OwnFieldDisabled => CurrentState is not Index.GameStateEnum.Setup;
 
-    private string EnemyFieldState => CurrentState is Index.GameStateEnum.InTurn ? "" : "hover-disabled";
+    private bool EnemyFieldDisabled => CurrentState is not Index.GameStateEnum.InTurn;
     
     private async void OnCellClicked((int x, int y) cell)
     {

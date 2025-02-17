@@ -1,12 +1,12 @@
-<div class="container @Disabled">
+<div class="container @StateClass">
     <table>
-        @for (int i = 0; i < FieldSize; i++)
+        @for (var i = 0; i < FieldSize; i++)
         {
             <tr>
-                @for (int j = 0; j < FieldSize; j++)
+                @for (var j = 0; j < FieldSize; j++)
                 {
                     <td>
-                        <SeaCell X=i Y=j Clicked=CellClicked State="Field[i * 10 + j]" CssClass="@Disabled"></SeaCell>
+                        <SeaCell X=i Y=j Clicked=CellClicked State="Field[i * 10 + j]"></SeaCell>
                     </td>
                 }
             </tr>
@@ -16,14 +16,16 @@
 
 @code {
     [Parameter]
-    public CellState[] Field { get; set; } = default!;
+    public CellState[] Field { get; set; } = null!;
 
     [Parameter]
     public int FieldSize { get; set; }
 
     [Parameter]
+    public bool Disabled { get; set; }
+
+    [Parameter]
     public EventCallback<(int,int)> CellClicked { get; set; }
 
-    // private string Disabled => PlayerState.InProgress ? "hover-disabled" : "";
-    private string Disabled => "";
+    private string StateClass => Disabled ? "hover-disabled" : "";
 }
