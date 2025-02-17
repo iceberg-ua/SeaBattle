@@ -66,15 +66,7 @@ public class PlayerState
 
     public PlayerInfo GetPlayerInfo()
     {
-        var fieldState = new Dictionary<int, CellState>();
-
-        foreach (var ship in Fleet.Ships)
-        {
-            foreach (ShipDeck deck in ship)
-            {
-                fieldState.Add(deck.X * _fieldSize + deck.Y, deck.State);
-            }
-        }
+        var fieldState = Fleet.Ships.SelectMany(ship => ship).ToDictionary(deck => deck.X * _fieldSize + deck.Y, deck => deck.State);
 
         return new(PlayerId, Name, "", _fieldSize, fieldState); ;
     }

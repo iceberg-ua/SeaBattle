@@ -15,12 +15,16 @@ public partial class Index
     [CascadingParameter]
     public PlayerInfo Player { get; set; } = default!;
 
+    public GameStateEnum CurrentState { get; set; } = GameStateEnum.Setup;
+
     public CellState[] _field = default!;
     public CellState[] _enemyField = default!;
 
     public bool _gameIsOver = false;
     public string _gameOverString = string.Empty;
     public string _gameOverClass = string.Empty;
+    
+    public enum GameStateEnum { Setup, Waiting, InTurn, OpponentsTurn, GameOver}
 
     protected override Task OnInitializedAsync()
     {
@@ -36,8 +40,7 @@ public partial class Index
 
         return base.OnInitializedAsync();
     }
-
-
+    
     private bool ClearButtonDisable => _field is not null && _field.All(c => c == CellState.empty);
 
     private bool FleetComplete { get; set; } = false;
@@ -124,6 +127,7 @@ public partial class Index
     private async Task OnSetReady(bool obj)
     {
         WaitingOpponent = true;
+        CurrentState = GameStateEnum.Waiting;
         SetOwnFieldState(false);
 
         await InvokeAsync(StateHasChanged);
@@ -144,11 +148,13 @@ public partial class Index
         if (move)
         {
             WaitingForShot = true;
+            CurrentState = GameStateEnum.InTurn;
             EnableEnemyField();
         }
         else
         {
             DisableEnemyField();
+            CurrentState = GameStateEnum.OpponentsTurn;
             WaitingForShot = false;
         }
 
@@ -157,6 +163,7 @@ public partial class Index
 
     private async Task OnGameOver(bool win)
     {
+        CurrentState = GameStateEnum.GameOver;
         DisableEnemyField();
 
         var resultMsg = win ? "WIN" : "LOST";

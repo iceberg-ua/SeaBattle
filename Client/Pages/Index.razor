@@ -10,18 +10,10 @@
     <div class="text-center mb-3">
         
         <HeaderComponent></HeaderComponent>
-
-        <div class="field-container">
-            <div class="@OwnFieldState">
-                <Battlefield Field="_field" FieldSize="Player.FieldSize" CellClicked="@FieldCellClicked" />
-            </div>
-            @if (IsStarted)
-            {
-                <div class="@EnemyFieldState">
-                    <Battlefield Field="_enemyField" FieldSize="Player.FieldSize" CellClicked="@FieldCellClicked" />
-                </div>
-            }
-        </div>
+        
+        <GameBoard FieldSize=Player.FieldSize CellClicked=FieldCellClicked
+                   Field=_field EnemyField=_enemyField
+                   GameStarted=IsStarted CurrentState=CurrentState></GameBoard>
 
         @if (!IsStarted)
         {
