@@ -45,7 +45,7 @@ else
 
 @code {
     [CascadingParameter]
-    public PlayerInfo Player { get; set; } = default!;
+    public PlayerInfo Player { get; set; } = null!;
 
     private string Names => Player.Name + (string.IsNullOrEmpty(Player.OponentsName) ? "" : $"VS {Player.OponentsName}");
 }

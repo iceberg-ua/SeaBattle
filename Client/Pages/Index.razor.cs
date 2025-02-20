@@ -9,11 +9,9 @@ namespace SeaBattle.Client.Pages;
 
 public partial class Index
 {
-    [CascadingParameter]
-    public HubConnection BattleHub { get; set; } = default!;
+    [CascadingParameter] public HubConnection BattleHub { get; set; } = null!;
 
-    [CascadingParameter]
-    public PlayerInfo Player { get; set; } = default!;
+    [CascadingParameter] public PlayerInfo Player { get; set; } = null!;
 
     public GameStateEnum CurrentState { get; set; } = GameStateEnum.Setup;
 
@@ -23,8 +21,15 @@ public partial class Index
     public bool _gameIsOver = false;
     public string _gameOverString = string.Empty;
     public string _gameOverClass = string.Empty;
-    
-    public enum GameStateEnum { Setup, Waiting, InTurn, OpponentsTurn, GameOver}
+
+    public enum GameStateEnum
+    {
+        Setup,
+        Waiting,
+        InTurn,
+        OpponentsTurn,
+        GameOver
+    }
 
     protected override Task OnInitializedAsync()
     {
@@ -40,36 +45,18 @@ public partial class Index
 
         return base.OnInitializedAsync();
     }
-    
-    private bool ClearButtonDisable => _field is not null && _field.All(c => c == CellState.empty);
 
-    private bool FleetComplete { get; set; } = false;
+    private bool ClearButtonDisable => _field.All(c => c == CellState.empty);
 
-    private bool IsStarted { get; set; } = false;
+    private bool FleetComplete { get; set; }
 
-    private bool WaitingForShot { get; set; } = false;
+    private bool IsStarted { get; set; }
 
-    private string OwnFieldState { get; set; } = "";
+    private bool WaitingForShot { get; set; }
 
-    private string EnemyFieldState { get; set; } = "";
+    private bool WaitingOpponent { get; set; }
 
-    private bool WaitingOpponent { get; set; } = false;
-
-    private CellState[] InitField(int size) => new CellState[size * size];
-
-    private void SetOwnFieldState(bool enabled)
-    {
-        OwnFieldState = enabled ? "" : "hover-disabled";
-    }
-
-    private void SetEnemyFieldState(bool enabled)
-    {
-        EnemyFieldState = enabled ? "" : "hover-disabled";
-    }
-
-    private void EnableEnemyField() => SetEnemyFieldState(true);
-
-    private void DisableEnemyField() => SetEnemyFieldState(false);
+    private static CellState[] InitField(int size) => new CellState[size * size];
 
     #region Events
 
@@ -80,13 +67,13 @@ public partial class Index
 
     private async void ClearButtonClicked(MouseEventArgs e)
     {
-        if(!ClearButtonDisable)
+        if (!ClearButtonDisable)
             await BattleHub?.SendAsync(nameof(IGameHub.ClearField), Player.Id)!;
     }
 
     private async Task OnReadyButtonClick()
     {
-        if(FleetComplete)
+        if (FleetComplete)
             await BattleHub?.SendAsync(nameof(IGameHub.PlayerReady), Player.Id)!;
     }
 
@@ -101,7 +88,7 @@ public partial class Index
             _field[shot.Key] = shot.Value;
         }
 
-        if(!IsStarted)
+        if (!IsStarted)
             FleetComplete = complete;
 
         await InvokeAsync(StateHasChanged);
@@ -128,7 +115,6 @@ public partial class Index
     {
         WaitingOpponent = true;
         CurrentState = GameStateEnum.Waiting;
-        SetOwnFieldState(false);
 
         await InvokeAsync(StateHasChanged);
     }
@@ -137,8 +123,6 @@ public partial class Index
     {
         IsStarted = true;
         _enemyField = InitField(Player.FieldSize);
-        SetOwnFieldState(false);
-        DisableEnemyField();
 
         await InvokeAsync(StateHasChanged);
     }
@@ -149,11 +133,9 @@ public partial class Index
         {
             WaitingForShot = true;
             CurrentState = GameStateEnum.InTurn;
-            EnableEnemyField();
         }
         else
         {
-            DisableEnemyField();
             CurrentState = GameStateEnum.OpponentsTurn;
             WaitingForShot = false;
         }
@@ -164,7 +146,6 @@ public partial class Index
     private async Task OnGameOver(bool win)
     {
         CurrentState = GameStateEnum.GameOver;
-        DisableEnemyField();
 
         var resultMsg = win ? "WIN" : "LOST";
         _gameOverString = $"Game over! You {resultMsg}";

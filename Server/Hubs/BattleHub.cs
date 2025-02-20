@@ -5,20 +5,21 @@ using SeaBattle.Shared.Player;
 
 namespace SeaBattle.Server.Hubs;
 
-class BattleHub(GlobalGameStorage storage) : Hub<IGameHub>
+internal class BattleHub(GlobalGameStorage storage) : Hub<IGameHub>
 {
     private GlobalGameStorage GameStorage { get; } = storage;
 
-    private GameState GetGameState(Guid playerId) => GameStorage.GetGameByPlayerId(playerId) ?? throw new NullReferenceException("Game state wasn't found");
+    private GameState GetGameState(Guid playerId) => GameStorage.GetGameByPlayerId(playerId) ??
+                                                     throw new NullReferenceException("Game state wasn't found");
 
     public async Task JoinGame(Guid playerId, string playerName)
     {
-        GameState? gameState = GameStorage.GetGameByPlayerId(playerId);   
+        var gameState = GameStorage.GetGameByPlayerId(playerId);
         PlayerInfo? playerInfo = null;
-        
-        if(gameState is null)
+
+        if (gameState is null)
         {
-            if(!string.IsNullOrEmpty(playerName))
+            if (!string.IsNullOrEmpty(playerName))
             {
                 gameState = GameStorage.CreateGame();
                 playerInfo = gameState.AddPlayer(playerName).GetPlayerInfo();
@@ -30,7 +31,7 @@ class BattleHub(GlobalGameStorage storage) : Hub<IGameHub>
             playerInfo = playerState?.GetPlayerInfo();
         }
 
-        if(playerInfo is not null)
+        if (playerInfo is not null)
         {
             await Groups.AddToGroupAsync(Context.ConnectionId, gameState!.ID.ToString());
             await Groups.AddToGroupAsync(Context.ConnectionId, playerInfo.Id.ToString());
@@ -47,7 +48,7 @@ class BattleHub(GlobalGameStorage storage) : Hub<IGameHub>
 
         await Clients.Group(playerId.ToString()).SetReady(true);
 
-        if(gameState.InProgress)
+        if (gameState.InProgress)
         {
             await Clients.Group(gameState.ID.ToString()).GameStarted();
 
@@ -67,7 +68,8 @@ class BattleHub(GlobalGameStorage storage) : Hub<IGameHub>
             if (playerState.Shots.Contains((x, y)))
                 return;
 
-            var oponent = gameState?.Players.FirstOrDefault(p => p.Key != playerId) ?? throw new Exception("Couldn't find players game state");
+            var oponent = gameState?.Players.FirstOrDefault(p => p.Key != playerId) ??
+                          throw new Exception("Couldn't find players game state");
             var oponentState = oponent.Value;
 
             var shotResult = oponentState.CheckShotResult(x, y);
@@ -89,7 +91,7 @@ class BattleHub(GlobalGameStorage storage) : Hub<IGameHub>
 
                     return;
                 }
-                else if(!shotResult.Any(s => s.Value == CellState.hit))
+                else if (!shotResult.Any(s => s.Value == CellState.hit))
                 {
                     await Clients.Groups(oponent.Key.ToString()).MoveTransition(true);
                     await Clients.Groups(playerId.ToString()).MoveTransition(false);
@@ -104,10 +106,10 @@ class BattleHub(GlobalGameStorage storage) : Hub<IGameHub>
             if (playerState.TryToUpdateState(x, y))
             {
                 var cellState = playerState.Field[pos];
-                await Clients.Group(playerId.ToString()).UpdateCellState(new() { { pos, cellState } }, playerState.Fleet.Complete);
+                await Clients.Group(playerId.ToString())
+                    .UpdateCellState(new() { { pos, cellState } }, playerState.Fleet.Complete);
             }
         }
-
     }
 
     public async Task ClearField(Guid playerId)

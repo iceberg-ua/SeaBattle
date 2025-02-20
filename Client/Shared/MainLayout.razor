@@ -8,7 +8,7 @@
 
 @implements IAsyncDisposable
 
-<CascadingValue Value="BattleHub" IsFixed=true>
+<CascadingValue Value="BattleHub" IsFixed>
     @if (_initialized)
     {
         <CascadingValue Value="Player">
@@ -24,10 +24,10 @@
     [Parameter]
     public RenderFragment? Body { get; set; }
 
-    public PlayerInfo Player { get; private set; } = default!;
-    public HubConnection BattleHub { get; private set; } = default!;
+    public PlayerInfo Player { get; private set; } = null!;
+    public HubConnection BattleHub { get; private set; } = null!;
 
-    private bool _initialized = false;
+    private bool _initialized;
 
     protected async override Task OnInitializedAsync()
     {
@@ -56,22 +56,14 @@
         _initialized = true;
         Player = player;
 
-        if (Player != null)
-        {
-            await LocalStorage.SetItemAsync("player", player.Id);
-            Navigation.NavigateTo("/");
-        }
-        else
-            Navigation.NavigateTo("/sign-in");
+        await LocalStorage.SetItemAsync("player", player.Id);
+        Navigation.NavigateTo("/");
     }
 
     #endregion
 
     public async ValueTask DisposeAsync()
     {
-        if (BattleHub is not null)
-        {
-            await BattleHub.DisposeAsync();
-        }
+        await BattleHub.DisposeAsync();
     }
 }
