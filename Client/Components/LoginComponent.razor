@@ -1,5 +1,4 @@
-﻿@using Microsoft.AspNetCore.SignalR.Client;
-@inject IJSRuntime JsRuntime
+﻿@inject IJSRuntime JsRuntime
 
 <div class="text-center">
     <div class="form-group mb-4">
@@ -20,4 +19,10 @@
     {
         OnJoinButtonClick.InvokeAsync(_userName);
     }
+
+    protected override Task OnInitializedAsync()
+    {
+        return base.OnInitializedAsync();
+    }
+
 }

@@ -11,11 +11,9 @@
 <CascadingValue Value="BattleHub" IsFixed>
     @if (_initialized)
     {
-        <CascadingValue Value="Player">
-            <main>
-                @Body
-            </main>
-        </CascadingValue>
+        <main>
+            @Body
+        </main>
     }
 </CascadingValue>
 
@@ -24,17 +22,21 @@
     [Parameter]
     public RenderFragment? Body { get; set; }
 
+    [Inject] 
+    public GameStateClient GameState { get; set; }
+    
     public PlayerInfo Player { get; private set; } = null!;
     public HubConnection BattleHub { get; private set; } = null!;
 
     private bool _initialized;
 
-    protected async override Task OnInitializedAsync()
+    protected override async Task OnInitializedAsync()
     {
         BattleHub = new HubConnectionBuilder()
             .WithUrl(Navigation.ToAbsoluteUri("/battlehub"))
             .Build();
 
+        //subscribe to server event when game is created/found and player is joined to it
         BattleHub.On<PlayerInfo>(nameof(IGameHub.JoinedGame), OnJoinedGame);
 
         await BattleHub.StartAsync();
@@ -48,16 +50,24 @@
         var playerId = await LocalStorage.GetItemAsync("player");
         Guid.TryParse(playerId, out Guid id);
 
+        //request player info with the id
         await BattleHub?.SendAsync(nameof(IGameHub.JoinGame), id, "")!;
     }
 
-    private async Task OnJoinedGame(PlayerInfo player)
+    private async Task OnJoinedGame(PlayerInfo? player)
     {
         _initialized = true;
-        Player = player;
 
-        await LocalStorage.SetItemAsync("player", player.Id);
-        Navigation.NavigateTo("/");
+        if (GameState.Stage is GameStageEnum.SigningIn)
+            Navigation.NavigateTo("/sign-in");
+        else
+        {
+            GameState.SwitchToSetupStage();
+            Player = player;
+            await LocalStorage.SetItemAsync("player", player.Id);
+            Navigation.NavigateTo("/");
+        }
+
     }
 
     #endregion

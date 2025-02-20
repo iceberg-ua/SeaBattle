@@ -6,7 +6,7 @@ public class Fleet
 {
     private readonly int _maxShipSize = 4;
 
-    public List<Ship> Ships { get; set; } = [];
+    public List<Ship> Ships { get; } = [];
 
     public bool Complete { get; private set; }
 
@@ -70,9 +70,9 @@ public class Fleet
 
     public void RemoveShipDeck(int x, int y)
     {
-        var existingShips = Ships.Where(s => s.Any(s => s.HasPosition(x, y)));
+        var existingShips = Ships.Where(s => s.Any(s => s.HasPosition(x, y))).ToList();
 
-        if (!existingShips.Any())
+        if (existingShips.Count == 0)
             return;
 
         var owner = existingShips.First();
