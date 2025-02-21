@@ -23,7 +23,7 @@
     public RenderFragment? Body { get; set; }
 
     [Inject] 
-    public GameStateClient GameState { get; set; }
+    public required GameStateClient GameState { get; set; }
     
     public PlayerInfo Player { get; private set; } = null!;
     public HubConnection BattleHub { get; private set; } = null!;
@@ -58,7 +58,7 @@
     {
         _initialized = true;
 
-        if (GameState.Stage is GameStageEnum.SigningIn)
+        if (player is null || GameState.Stage is GameStageEnum.SigningIn)
             Navigation.NavigateTo("/sign-in");
         else
         {

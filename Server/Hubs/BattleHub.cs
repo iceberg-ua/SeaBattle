@@ -33,7 +33,7 @@ internal class BattleHub(GlobalGameStorage storage) : Hub<IGameHub>
 
         if (playerInfo is not null)
         {
-            await Groups.AddToGroupAsync(Context.ConnectionId, gameState!.ID.ToString());
+            await Groups.AddToGroupAsync(Context.ConnectionId, gameState!.Id.ToString());
             await Groups.AddToGroupAsync(Context.ConnectionId, playerInfo.Id.ToString());
         }
 
@@ -50,7 +50,7 @@ internal class BattleHub(GlobalGameStorage storage) : Hub<IGameHub>
 
         if (gameState.InProgress)
         {
-            await Clients.Group(gameState.ID.ToString()).GameStarted();
+            await Clients.Group(gameState.Id.ToString()).GameStarted();
 
             var randomPlayer = gameState.Players.Keys.ElementAt(Random.Shared.Next(0, gameState.Players.Count));
             await Clients.Groups(randomPlayer.ToString()).MoveTransition(true);

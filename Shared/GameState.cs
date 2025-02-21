@@ -2,33 +2,32 @@ using SeaBattle.Shared.Player;
 
 namespace SeaBattle.Shared;
 
-public enum CellState { empty = 0, ship, hit, miss }
+public enum CellState
+{
+    empty = 0,
+    ship,
+    hit,
+    miss
+}
 
 public class GameState
 {
-    public GameState()
-    {
-        ID = Guid.NewGuid();
-
-        Console.WriteLine($"Game created: {ID}");
-    }
-
-    public Guid ID { get; }
+    public Guid Id { get; } = Guid.NewGuid();
 
     public int Size { get; } = 10;
 
-    public bool InProgress { get; private set; } = false;
+    public bool InProgress { get; private set; }
 
-    public Dictionary<Guid, PlayerState> Players { get; set; } = new(2);
+    public Dictionary<Guid, PlayerState> Players { get; } = new(2);
 
-    public PlayerState? PlayerInTurn { get; set; } = null;
+    public PlayerState? PlayerInTurn { get; set; }
 
     public PlayerState AddPlayer(string playerName)
     {
         if (Players.Count >= 2)
             throw new Exception("There can be only two players in the game");
 
-        var playerState = new PlayerState(playerName, ID);
+        var playerState = new PlayerState(playerName, Id, Size);
 
         Players.Add(playerState.PlayerId, playerState);
 
@@ -37,7 +36,7 @@ public class GameState
 
     public void SetPlayerReady(Guid playerId)
     {
-        Players[playerId].Ready = true;
+        Players[playerId].SetReady();
 
         if (Players.Count == 2 && Players.All(p => p.Value.Ready))
             InProgress = true;

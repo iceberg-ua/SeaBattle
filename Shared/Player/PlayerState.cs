@@ -2,73 +2,52 @@
 
 namespace SeaBattle.Shared.Player;
 
-/// <summary>
-/// Event arguments for when a ship is destroyed
-/// </summary>
-public class ShipDestroyedEventArgs : EventArgs
-{
-    public Ship DestroyedShip { get; }
-    public ShipDestroyedEventArgs(Ship ship) => DestroyedShip = ship;
-}
-
 public class PlayerState
 {
-    private readonly int _fieldSize;
-
-    public PlayerState(string name, Guid tableId, int fieldSize = 10)
+    public PlayerState(string name, Guid gameId, int fieldSize)
     {
-        _fieldSize = fieldSize;
+        FieldSize = fieldSize;
 
         Name = name;
-        TableId = tableId;
+        GameId = gameId;
         PlayerId = Guid.NewGuid();
 
-        Field = new CellState[_fieldSize * _fieldSize];
-        Shots = new(_fieldSize * _fieldSize);
+        Field = new CellState[FieldSize * FieldSize];
+        Shots = new(FieldSize * FieldSize);
     }
 
     #region Properties
 
-    public Guid TableId { get; }
+    public Guid GameId { get; }
 
     public Guid PlayerId { get; set; }
 
-    public string Name { get; } = default!;
+    public string Name { get; }
 
-    public int FieldSize => _fieldSize;
+    public int FieldSize { get; }
 
-    public bool Ready { get; set; } = false;
+    public bool Ready { get; set; }
 
     public CellState[] Field { get; private set; }
 
-    public Fleet Fleet { get; private set; } = new();
+    public Fleet Fleet { get; } = new();
 
     public Stack<(int, int)> Shots { get; }
 
-    /// <summary>
-    /// Fired when a ship is completely destroyed
-    /// </summary>
-    public event EventHandler<ShipDestroyedEventArgs>? ShipDestroyed;
-
     #endregion
-
-    private int CellIndex(int x, int y) => x * FieldSize + y;
-
-    private CellState GetCell(int x, int y) => Field[CellIndex(x, y)];
-
-    private bool CellIsOccupied(int x, int y) => x >= 0 && x < FieldSize &&
-                                                 y >= 0 && y < FieldSize && GetCell(x, y) == CellState.ship;
-
-    private void SetCell(int x, int y, CellState value) => Field[CellIndex(x, y)] = value;
-
-    private bool OnDiagonal(int x, int y) => CellIsOccupied(x - 1, y - 1) || CellIsOccupied(x + 1, y - 1) ||
-                                             CellIsOccupied(x - 1, y + 1) || CellIsOccupied(x + 1, y + 1);
-
+    
+    #region Public methods
+    
     public PlayerInfo GetPlayerInfo()
     {
-        var fieldState = Fleet.Ships.SelectMany(ship => ship).ToDictionary(deck => deck.X * _fieldSize + deck.Y, deck => deck.State);
+        var fieldState = Fleet.Ships.SelectMany(ship => ship).ToDictionary(deck => deck.X * FieldSize + deck.Y, deck => deck.State);
 
-        return new(PlayerId, Name, "", _fieldSize, fieldState); ;
+        return new(PlayerId, Name, "", FieldSize, fieldState); ;
+    }
+
+    public void SetReady()
+    {
+        Ready = true;
     }
 
     public bool TryToUpdateState(int x, int y)
@@ -123,13 +102,34 @@ public class PlayerState
         {
             Fleet.Ships.Remove(ship);
             var result = HandleShipDestruction(ship, x, y);
-            ShipDestroyed?.Invoke(this, new ShipDestroyedEventArgs(ship));
             return result;
         }
 
         // Case 3: Hit but ship not destroyed
         return new Dictionary<int, CellState>() { { CellIndex(x, y), CellState.hit } };
     }
+    
+    public void ClearField()
+    {
+        Field = new CellState[FieldSize * FieldSize];
+        Fleet.Clear();
+    }
+    
+    #endregion
+    
+    #region Private methods
+
+    private CellState GetCell(int x, int y) => Field[CellIndex(x, y)];
+
+    private void SetCell(int x, int y, CellState value) => Field[CellIndex(x, y)] = value;
+    
+    private int CellIndex(int x, int y) => x * FieldSize + y;
+
+    private bool CellIsOccupied(int x, int y) => x >= 0 && x < FieldSize &&
+                                                 y >= 0 && y < FieldSize && GetCell(x, y) == CellState.ship;
+
+    private bool OnDiagonal(int x, int y) => CellIsOccupied(x - 1, y - 1) || CellIsOccupied(x + 1, y - 1) ||
+                                             CellIsOccupied(x - 1, y + 1) || CellIsOccupied(x + 1, y + 1);
 
     /// <summary>
     /// Updates a ship's deck after being hit
@@ -193,10 +193,6 @@ public class PlayerState
             result.TryAdd(index, CellState.miss);
         }
     }
-
-    public void ClearField()
-    {
-        Field = new CellState[_fieldSize * _fieldSize];
-        Fleet.Clear();
-    }
+    
+    #endregion
 }

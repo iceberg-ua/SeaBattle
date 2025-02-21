@@ -29,7 +29,7 @@ public class GlobalGameStorage
         else
         {
             game = new GameState();
-            _gamesStorage.Add(game.ID, game);
+            _gamesStorage.Add(game.Id, game);
             _vacantGame = game;
         }
 
