@@ -42,7 +42,7 @@ public class PlayerState
     {
         var fieldState = Fleet.Ships.SelectMany(ship => ship).ToDictionary(deck => deck.X * FieldSize + deck.Y, deck => deck.State);
 
-        return new(PlayerId, Name, "", FieldSize, fieldState); ;
+        return new(PlayerId, Name, FieldSize, fieldState); ;
     }
 
     public void SetReady()

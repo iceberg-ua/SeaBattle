@@ -3,15 +3,8 @@
 public class GlobalGameStorage
 {
     private readonly Dictionary<Guid, GameState> _gamesStorage = [];
-    private GameState? _vacantGame = null;
-
-    public GameState? GetGameById(Guid playerId)
-    {
-        _gamesStorage.TryGetValue(playerId, out var game);
-
-        return game;
-    }
-
+    private GameState? _vacantGame;
+    
     public GameState? GetGameByPlayerId(Guid playerId)
     {
         return _gamesStorage.Values.FirstOrDefault(g => g.Players.Keys.Contains(playerId));

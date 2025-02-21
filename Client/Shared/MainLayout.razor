@@ -11,9 +11,11 @@
 <CascadingValue Value="BattleHub" IsFixed>
     @if (_initialized)
     {
-        <main>
-            @Body
-        </main>
+        <CascadingValue Value="GameState">
+            <main>
+                @Body
+            </main>
+        </CascadingValue>
     }
 </CascadingValue>
 
@@ -21,12 +23,9 @@
 @code {
     [Parameter]
     public RenderFragment? Body { get; set; }
-
-    [Inject] 
-    public required GameStateClient GameState { get; set; }
     
-    public PlayerInfo Player { get; private set; } = null!;
     public HubConnection BattleHub { get; private set; } = null!;
+    public GameStateClient GameState { get; set; } = null!;
 
     private bool _initialized;
 
@@ -37,7 +36,7 @@
             .Build();
 
         //subscribe to server event when game is created/found and player is joined to it
-        BattleHub.On<PlayerInfo>(nameof(IGameHub.JoinedGame), OnJoinedGame);
+        BattleHub.On<GameStateClient>(nameof(IGameHub.JoinedGame), OnJoinedGame);
 
         await BattleHub.StartAsync();
         await TryGetPlayerState();
@@ -48,26 +47,23 @@
     private async Task TryGetPlayerState()
     {
         var playerId = await LocalStorage.GetItemAsync("player");
-        Guid.TryParse(playerId, out Guid id);
-
-        //request player info with the id
-        await BattleHub?.SendAsync(nameof(IGameHub.JoinGame), id, "")!;
+        
+        if (Guid.TryParse(playerId, out var id))
+            await BattleHub?.SendAsync(nameof(IGameHub.JoinGame), id, "")!;//request player info with the id
     }
 
-    private async Task OnJoinedGame(PlayerInfo? player)
+    private async Task OnJoinedGame(GameStateClient? gameState)
     {
         _initialized = true;
 
-        if (player is null || GameState.Stage is GameStageEnum.SigningIn)
+        if (gameState is null)
             Navigation.NavigateTo("/sign-in");
         else
         {
-            GameState.SwitchToSetupStage();
-            Player = player;
-            await LocalStorage.SetItemAsync("player", player.Id);
+            GameState = gameState;
+            await LocalStorage.SetItemAsync("player", GameState.Player.Id);
             Navigation.NavigateTo("/");
         }
-
     }
 
     #endregion

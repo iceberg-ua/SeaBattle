@@ -47,9 +47,9 @@ public interface IGameHub
     /// <summary>
     /// Notifies the client that they have successfully joined the game.
     /// </summary>
-    /// <param name="player">Information about the joined player, null if join failed</param>
+    /// <param name="gameState">Current state of the game and player's state</param>
     /// <returns>A task representing the asynchronous operation</returns>
-    Task JoinedGame(PlayerInfo? player);
+    Task JoinedGame(GameStateClient? gameState);
 
     /// <summary>
     /// Updates the state of cells on the player's board after an action.

@@ -9,9 +9,13 @@ namespace SeaBattle.Client.Pages;
 
 public partial class Index
 {
-    [CascadingParameter] public HubConnection BattleHub { get; set; } = null!;
+    [CascadingParameter] 
+    public HubConnection BattleHub { get; set; } = null!;
 
-    [CascadingParameter] public PlayerInfo Player { get; set; } = null!;
+    [CascadingParameter] 
+    public required GameStateClient GameState { get; set; }
+    
+    public PlayerInfo Player => GameState.Player!;
 
     public GameStateEnum CurrentState { get; set; } = GameStateEnum.Setup;
 

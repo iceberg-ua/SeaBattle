@@ -16,7 +16,9 @@ public class GameState
 
     public int Size { get; } = 10;
 
-    public bool InProgress { get; private set; }
+    public GameStageEnum Stage { get; set; } = GameStageEnum.Setup;
+
+    public bool InProgress => Stage == GameStageEnum.Game;
 
     public Dictionary<Guid, PlayerState> Players { get; } = new(2);
 
@@ -28,10 +30,14 @@ public class GameState
             throw new Exception("There can be only two players in the game");
 
         var playerState = new PlayerState(playerName, Id, Size);
-
         Players.Add(playerState.PlayerId, playerState);
 
         return playerState;
+    }
+
+    public PlayerState GetOpponent(Guid playerId)
+    {
+        return Players.FirstOrDefault(s => s.Value.PlayerId != playerId).Value;
     }
 
     public void SetPlayerReady(Guid playerId)
@@ -39,7 +45,20 @@ public class GameState
         Players[playerId].SetReady();
 
         if (Players.Count == 2 && Players.All(p => p.Value.Ready))
-            InProgress = true;
+            Stage = GameStageEnum.Game;
+    }
+
+    public GameStateClient GetClientGameState(Guid playerId)
+    {
+        var playerInfo = Players[playerId]?.GetPlayerInfo();
+        var opponentInfo = GetOpponent(playerId);
+
+        return new GameStateClient()
+        {
+            Player = playerInfo,
+            OpponentsName = opponentInfo?.Name,
+            Stage = Stage
+        };
     }
 }
 
