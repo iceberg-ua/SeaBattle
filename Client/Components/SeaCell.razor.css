@@ -1,26 +1,100 @@
 .sea-cell {
     width: 40px;
     height: 40px;
-    background-color: aqua;
-    border: 1px solid black;
+    background-color: #64B5F6;
+    border: 1px solid #1976D2;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    border-radius: 3px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
+    z-index: 1;
+}
+
+.sea-cell::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: radial-gradient(circle at center, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0) 70%);
+    opacity: 0.5;
 }
 
 .sea-cell:hover {
-    background-color: darkorange;
+    background-color: #90CAF9;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    z-index: 2; /* Still maintain a higher z-index when hovering */
 }
 
 .sea-cell.hit {
-    background-color: darkred;
+    background-color: #EF5350;
 }
 
 .sea-cell.miss {
-    background-color: steelblue;
+    background-color: #42A5F5;
 }
 
 .sea-cell.ship {
-    background-color: black;
+    background-color: #455A64;
+    box-shadow: inset 0 0 5px rgba(0,0,0,0.5);
 }
 
-    .sea-cell.ship:hover {
-        background-color: brown;
-    }
+.sea-cell.ship:hover {
+    background-color: #607D8B;
+}
+
+/* Hit marker (X) - improved centering */
+.hit-marker {
+    position: absolute;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    font-size: 28px;
+    line-height: 1;
+    font-weight: bold;
+    color: white;
+    text-shadow: 0 0 3px rgba(0,0,0,0.5);
+}
+
+/* Miss marker (dot) */
+.miss-marker {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 10px;
+    height: 10px;
+    background-color: white;
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+}
+
+/* Disable hover effects when battlefield is disabled */
+.hover-disabled .sea-cell {
+    cursor: default;
+}
+
+.hover-disabled .sea-cell:hover {
+    background-color: inherit;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
+}
+
+/* Keep hit color when hovering on disabled battlefield */
+.hover-disabled .sea-cell.hit:hover {
+    background-color: #EF5350;
+}
+
+/* Keep miss color when hovering on disabled battlefield */
+.hover-disabled .sea-cell.miss:hover {
+    background-color: #42A5F5;
+}
+
+/* Keep ship color when hovering on disabled battlefield */
+.hover-disabled .sea-cell.ship:hover {
+    background-color: #455A64;
+}

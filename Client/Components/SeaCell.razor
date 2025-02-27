@@ -1,5 +1,12 @@
-<div class="sea-cell @CssState @CssClass" disabled="true" @onmousedown=CellClick>
-
+<div class="sea-cell @CssState @CssClass" id="cell-@($"{X}-{Y}")" @onmousedown=CellClick>
+    @if (State == CellState.hit)
+    {
+        <div class="hit-marker"></div>
+    }
+    @if (State == CellState.miss)
+    {
+        <div class="miss-marker"></div>
+    }
 </div>
 
 @code {
