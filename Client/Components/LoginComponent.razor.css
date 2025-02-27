@@ -1,9 +1,87 @@
-﻿.form-control {
-    font-size: 24px;
-    font-family: 'Allerta Stencil', sans-serif;
+﻿.login-container {
+    max-width: 400px;
+    padding: 30px;
+    background: linear-gradient(135deg, #E3F2FD 0%, #BBDEFB 100%);
+    border-radius: 8px;
+    box-shadow: 0 10px 20px rgba(0,0,0,0.19), 0 6px 6px rgba(0,0,0,0.23);
+    transform: translateY(0);
+    transition: all 0.3s cubic-bezier(.25,.8,.25,1);
+    position: relative;
+    margin: 0 auto;
 }
 
-.btn {
-    font-size: 24px;
+.login-container::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 5px;
+    background: linear-gradient(90deg, #29B6F6, #1976D2);
+    border-radius: 8px 8px 0 0;
+}
+
+.login-title {
     font-family: 'Allerta Stencil', sans-serif;
+    color: #1976D2;
+    font-size: 2.5rem;
+    text-align: center;
+    margin-bottom: 20px;
+    text-transform: uppercase;
+    letter-spacing: 3px;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+}
+
+.form-group {
+    margin-bottom: 25px;
+}
+
+.form-control {
+    font-size: 18px;
+    padding: 15px;
+    border-radius: 4px;
+    border: 2px solid #BBDEFB;
+    transition: all 0.3s ease;
+    font-family: 'Allerta Stencil', sans-serif;
+    width: 100%;
+}
+
+.form-control:focus {
+    border-color: #1976D2;
+    box-shadow: 0 0 0 0.2rem rgba(25, 118, 210, 0.25);
+}
+
+.btn-primary {
+    background-color: #1976D2;
+    border-color: #1976D2;
+    padding: 12px 30px;
+    font-size: 18px;
+    font-weight: bold;
+    border-radius: 4px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    transition: all 0.3s ease;
+    font-family: 'Allerta Stencil', sans-serif;
+    display: inline-block;
+}
+
+.btn-primary:hover:not([disabled]) {
+    background-color: #1565C0;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+}
+
+.btn-primary:active:not([disabled]) {
+    transform: translateY(1px);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+
+.btn-primary[disabled] {
+    background-color: #90CAF9;
+    border-color: #90CAF9;
+    cursor: not-allowed;
+}
+
+.text-center {
+    text-align: center;
 }
