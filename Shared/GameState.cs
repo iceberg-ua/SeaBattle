@@ -22,8 +22,6 @@ public class GameState
 
     public Dictionary<Guid, PlayerState> Players { get; } = new(2);
 
-    public PlayerState? PlayerInTurn { get; set; }
-
     public PlayerState AddPlayer(string playerName)
     {
         if (Players.Count >= 2)
@@ -48,6 +46,12 @@ public class GameState
             Stage = GameStageEnum.Game;
     }
 
+    /// <summary>
+    /// Retrieves the game state for a specific player, including player information,
+    /// opponent's name, and the current stage of the game.
+    /// </summary>
+    /// <param name="playerId">The unique identifier of the player.</param>
+    /// <returns>A GameStateClient object containing the player's game state information. The object for client side state handling.</returns>
     public GameStateClient GetClientGameState(Guid playerId)
     {
         var playerInfo = Players[playerId]?.GetPlayerInfo();

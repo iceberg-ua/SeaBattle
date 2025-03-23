@@ -34,7 +34,6 @@ class BattleHub(GlobalGameStorage storage) : Hub<IGameHub>
     public async Task PlayerReady(Guid playerId)
     {
         var gameState = GetGameState(playerId);
-
         gameState.SetPlayerReady(playerId);
 
         await Clients.Group(playerId.ToString()).SetReady(true);
@@ -62,7 +61,6 @@ class BattleHub(GlobalGameStorage storage) : Hub<IGameHub>
             var oponent = gameState?.Players.FirstOrDefault(p => p.Key != playerId) ??
                           throw new Exception("Couldn't find players game state");
             var oponentState = oponent.Value;
-
             var shotResult = oponentState.CheckShotResult(x, y);
 
             if (shotResult != null)
@@ -72,11 +70,9 @@ class BattleHub(GlobalGameStorage storage) : Hub<IGameHub>
                 await Clients.Group(oponent.Key.ToString()).UpdateCellState(shotResult, true);
                 await Clients.Group(playerId.ToString()).UpdateEnemyCellState(shotResult);
 
-                gameState.PlayerInTurn = oponentState;
-
                 if (oponentState.Fleet.Ships.Count == 0)
                 {
-                    gameState.PlayerInTurn = null;
+                    gameState.Stage = GameStageEnum.GameOver;
                     await Clients.Groups(playerId.ToString()).GameOver(true);
                     await Clients.Groups(oponent.Key.ToString()).GameOver(false);
 

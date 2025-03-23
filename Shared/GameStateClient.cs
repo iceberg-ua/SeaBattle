@@ -12,7 +12,6 @@ public class GameStateClient
 public enum GameStageEnum
 {
     Setup,
-    Waiting,
     Game,
     GameOver,
 }
