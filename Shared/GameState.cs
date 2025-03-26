@@ -59,7 +59,7 @@ public class GameState
 
         return new GameStateClient()
         {
-            Player = playerInfo,
+            Player = playerInfo!,
             OpponentsName = opponentInfo?.Name,
             FieldSize = Size,
             Stage = Stage

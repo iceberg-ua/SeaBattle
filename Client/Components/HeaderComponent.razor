@@ -5,6 +5,28 @@
 </lable>
 <br />
 
+@if (GameState.Stage == GameStageEnum.Setup)
+{
+    <label>Welcome to the Sea Battle</label>
+    <div class="text-center mb-1">
+        Now postion your ships and press <b>Ready</b> button
+    </div>
+}
+else if (GameState.Stage == GameStageEnum.Game)
+{
+    <div class="text-center mb-1">
+        Battle is on!
+    </div>
+
+    <div>
+        <h3>@(GameState.Player.Name) VS @GameState.OpponentsName</h3>
+    </div>
+}
+else if (GameState.Stage == GameStageEnum.GameOver)
+{
+
+}
+
 @* @if (!IsStarted)
 {
     <label>Welcome to the Sea Battle</label>
