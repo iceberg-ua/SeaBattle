@@ -26,7 +26,9 @@ public class PlayerState
 
     public int FieldSize { get; }
 
-    public bool Ready { get; set; }
+    public bool Ready => State == PlayerStateEnum.Ready;
+
+    public PlayerStateEnum State { get; set; } = PlayerStateEnum.Formation;
 
     public CellState[] Field { get; private set; }
 
@@ -42,12 +44,12 @@ public class PlayerState
     {
         var fieldState = Fleet.Ships.SelectMany(ship => ship).ToDictionary(deck => deck.X * FieldSize + deck.Y, deck => deck.State);
 
-        return new(PlayerId, Name, FieldSize, fieldState); ;
+        return new(PlayerId, Name, State, fieldState); ;
     }
 
     public void SetReady()
     {
-        Ready = true;
+        State = PlayerStateEnum.Ready;
     }
 
     public bool TryToUpdateState(int x, int y)

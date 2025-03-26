@@ -6,6 +6,7 @@ public class GameStateClient
 {
     public PlayerInfo? Player { get; set; }
     public string? OpponentsName { get; set; }
+    public int FieldSize { get; set; }
     public GameStageEnum Stage { get; set; } = GameStageEnum.Setup;
 }
 
@@ -21,5 +22,7 @@ public enum PlayerStateEnum
     Formation,
     Ready,
     InTurn,
-    WaitingForTurn
+    WaitingForTurn,
+    Won,
+    Lost
 }

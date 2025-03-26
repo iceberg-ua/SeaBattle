@@ -45,7 +45,7 @@ public partial class Index
         BattleHub.On<bool>(nameof(IGameHub.MoveTransition), OnMoveTransition);
         BattleHub.On<bool>(nameof(IGameHub.GameOver), OnGameOver);
 
-        _field = InitField(Player.FieldSize);
+        _field = InitField(GameState.FieldSize);
 
         return base.OnInitializedAsync();
     }
@@ -110,7 +110,7 @@ public partial class Index
 
     private async Task OnClearField()
     {
-        _field = InitField(Player.FieldSize);
+        _field = InitField(GameState.FieldSize);
 
         await InvokeAsync(StateHasChanged);
     }
@@ -126,7 +126,7 @@ public partial class Index
     private async Task OnGameStarted()
     {
         IsStarted = true;
-        _enemyField = InitField(Player.FieldSize);
+        _enemyField = InitField(GameState.FieldSize);
 
         await InvokeAsync(StateHasChanged);
     }

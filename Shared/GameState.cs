@@ -61,6 +61,7 @@ public class GameState
         {
             Player = playerInfo,
             OpponentsName = opponentInfo?.Name,
+            FieldSize = Size,
             Stage = Stage
         };
     }
