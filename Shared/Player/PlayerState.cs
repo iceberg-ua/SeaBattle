@@ -28,7 +28,7 @@ public class PlayerState
 
     public bool Ready => State == PlayerStateEnum.Ready;
 
-    public PlayerStateEnum State { get; set; } = PlayerStateEnum.Formation;
+    public PlayerStateEnum State { get; private set; } = PlayerStateEnum.Formation;
 
     public CellState[] Field { get; private set; }
 
@@ -44,7 +44,7 @@ public class PlayerState
     {
         var fieldState = Fleet.Ships.SelectMany(ship => ship).ToDictionary(deck => deck.X * FieldSize + deck.Y, deck => deck.State);
 
-        return new(PlayerId, Name, State, fieldState); ;
+        return new(PlayerId, Name, State, fieldState);
     }
 
     public void SetReady()
@@ -52,6 +52,35 @@ public class PlayerState
         State = PlayerStateEnum.Ready;
     }
 
+    public void SetInTurn()
+    {
+        State = PlayerStateEnum.InTurn;
+    }
+
+    public void SetWaitingForTurn()
+    {
+        State = PlayerStateEnum.WaitingForTurn;
+    }
+
+    public void SetWon()
+    {
+        State = PlayerStateEnum.Won;
+    }
+
+    public void SetLost()
+    {
+        State = PlayerStateEnum.Lost;
+    }
+
+    /// <summary>
+    /// Attempts to update the state of the cell at the specified coordinates.
+    /// If the cell is occupied by a ship, it will be cleared. If the cell is empty and not on a diagonal,
+    /// a ship deck will be added to the cell.
+    /// This method is called only on the formation stage.
+    /// </summary>
+    /// <param name="x">The X coordinate of the cell.</param>
+    /// <param name="y">The Y coordinate of the cell.</param>
+    /// <returns>True if the cell state was changed, otherwise false.</returns>
     public bool TryToUpdateState(int x, int y)
     {
         var pos = CellIndex(x, y);
@@ -71,7 +100,8 @@ public class PlayerState
     }
 
     /// <summary>
-    /// Processes a shot at the specified coordinates and returns the resulting cell state changes
+    /// Processes a shot at the specified coordinates and returns the resulting cell state changes.
+    /// This method is called during the game stage.
     /// </summary>
     /// <param name="x">X coordinate of the shot</param>
     /// <param name="y">Y coordinate of the shot</param>
@@ -111,6 +141,10 @@ public class PlayerState
         return new Dictionary<int, CellState>() { { CellIndex(x, y), CellState.hit } };
     }
     
+    ///<summary>
+    /// Clears the player's field and fleet.
+    /// Resets the field to an empty state and clears all ships from the fleet.
+    /// </summary>
     public void ClearField()
     {
         Field = new CellState[FieldSize * FieldSize];
