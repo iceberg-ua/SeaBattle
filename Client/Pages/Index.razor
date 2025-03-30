@@ -7,23 +7,16 @@
         
         <HeaderComponent></HeaderComponent>
         
-        <GameBoard FieldSize=GameState.FieldSize CellClicked=FieldCellClicked
-                   Field=_field EnemyField=_enemyField
-                   GameStarted=IsStarted CurrentState=CurrentState></GameBoard>
+        <GameBoard Field=_field 
+                   EnemyField=_enemyField
+                   CellClicked=FieldCellClicked></GameBoard>
 
-        @if (!IsStarted)
+        @if (!IsStarted && !IsReady)
         {
-            @if (!WaitingOpponent)
-            {
-                <div class="button-container">
-                    <button class="btn btn-danger" disabled="@ClearButtonDisable" @onclick=ClearButtonClicked>Clear</button>
-                    <button class="btn btn-success" disabled="@(!FleetComplete)" @onclick=OnReadyButtonClick>Ready</button>
-                </div>
-            }
-            else
-            {
-                <h3>Waiting for an opponent</h3>
-            }
+            <div class="button-container">
+                <button class="btn btn-danger" disabled="@ClearButtonDisable" @onclick=ClearButtonClicked>Clear</button>
+                <button class="btn btn-success" disabled="@(!FleetComplete)" @onclick=OnReadyButtonClick>Ready</button>
+            </div>
         }
     </div>
 </div>

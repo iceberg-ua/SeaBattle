@@ -1,7 +1,8 @@
 <div class="field-container">
-    <Battlefield Field=@Field FieldSize=@FieldSize CellClicked=@OnCellClicked Disabled="OwnFieldDisabled"/>
-    @if (GameStarted)
+    <Battlefield Field=@Field FieldSize=GameState.FieldSize CellClicked=@OnCellClicked Disabled="OwnFieldDisabled"/>
+
+    @if (GameState.Stage == GameStageEnum.Game)
     {
-        <Battlefield Field=@EnemyField FieldSize=@FieldSize CellClicked=@OnCellClicked Disabled="EnemyFieldDisabled"/>
+        <Battlefield Field=@EnemyField FieldSize=GameState.FieldSize CellClicked=@OnCellClicked Disabled="EnemyFieldDisabled" />
     }
 </div>

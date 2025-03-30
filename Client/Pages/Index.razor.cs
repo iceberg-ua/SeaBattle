@@ -9,15 +9,13 @@ namespace SeaBattle.Client.Pages;
 
 public partial class Index
 {
-    [CascadingParameter] 
+    [CascadingParameter]
     public HubConnection BattleHub { get; set; } = null!;
 
-    [CascadingParameter] 
+    [CascadingParameter]
     public required GameStateClient GameState { get; set; }
-    
-    public PlayerInfo Player => GameState.Player!;
 
-    public GameStateEnum CurrentState { get; set; } = GameStateEnum.Setup;
+    public PlayerInfo Player => GameState.Player!;
 
     public CellState[] _field = default!;
     public CellState[] _enemyField = default!;
@@ -54,11 +52,9 @@ public partial class Index
 
     private bool FleetComplete { get; set; }
 
-    private bool IsStarted { get; set; }
+    private bool IsStarted => GameState.Stage == GameStageEnum.Game;
 
-    private bool WaitingForShot { get; set; }
-
-    private bool WaitingOpponent { get; set; }
+    private bool IsReady => GameState.Player.State == PlayerStateEnum.Ready;
 
     private static CellState[] InitField(int size) => new CellState[size * size];
 
@@ -117,47 +113,42 @@ public partial class Index
 
     private async Task OnSetReady(bool obj)
     {
-        WaitingOpponent = true;
-        CurrentState = GameStateEnum.Waiting;
-
-        await InvokeAsync(StateHasChanged);
+        await UpdatePlayerState(PlayerStateEnum.Ready);
     }
 
-    private async Task OnGameStarted()
+    private async ValueTask OnGameStarted()
     {
-        IsStarted = true;
         _enemyField = InitField(GameState.FieldSize);
-
-        await InvokeAsync(StateHasChanged);
+        await UpdateGameStage(GameStageEnum.Game);
     }
 
     private async Task OnMoveTransition(bool move)
     {
-        if (move)
-        {
-            WaitingForShot = true;
-            CurrentState = GameStateEnum.InTurn;
-        }
-        else
-        {
-            CurrentState = GameStateEnum.OpponentsTurn;
-            WaitingForShot = false;
-        }
-
-        await InvokeAsync(StateHasChanged);
+        await UpdatePlayerState(move ? PlayerStateEnum.InTurn : PlayerStateEnum.WaitingForTurn);
     }
 
     private async Task OnGameOver(bool win)
     {
-        CurrentState = GameStateEnum.GameOver;
-
         var resultMsg = win ? "WIN" : "LOST";
         _gameOverString = $"Game over! You {resultMsg}";
         _gameOverClass = resultMsg.ToLower();
         _gameIsOver = true;
 
-        await InvokeAsync(StateHasChanged);
+        await UpdatePlayerState(win ? PlayerStateEnum.Won : PlayerStateEnum.Lost);
+        await UpdateGameStage(GameStageEnum.GameOver);
     }
 
     #endregion
+
+    private async ValueTask UpdateGameStage(GameStageEnum newStage)
+    {
+        GameState.Stage = newStage;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async ValueTask UpdatePlayerState(PlayerStateEnum newState)
+    {
+        GameState.Player = GameState.Player with { State = newState };
+        await InvokeAsync(StateHasChanged);
+    }
 }

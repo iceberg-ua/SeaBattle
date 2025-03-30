@@ -1,73 +1,98 @@
 ﻿@using SeaBattle.Shared.Player
 
-<lable class="mb-5">
-    <b>@Names</b>
-</lable>
-<br />
-
-@if (GameState.Stage == GameStageEnum.Setup)
-{
-    <label>Welcome to the Sea Battle</label>
-    <div class="text-center mb-1">
-        Now postion your ships and press <b>Ready</b> button
-    </div>
-}
-else if (GameState.Stage == GameStageEnum.Game)
-{
-    <div class="text-center mb-1">
-        Battle is on!
+<div class="header-container">
+    <div class="header-title">
+        <h1>SEA BATTLE</h1>
     </div>
 
-    <div>
-        <h3>@(GameState.Player.Name) VS @GameState.OpponentsName</h3>
+    <div class="game-info @GetStateClass()">
+        @if (GameState.Stage == GameStageEnum.Setup)
+        {
+            <div class="setup-phase">
+                <h2>Battle Preparation</h2>
+                <p>Position your ships on the field and press <strong>Ready</strong> when your fleet is complete.</p>
+                <div class="player-info">
+                    <span class="player-badge">@GameState.Player.Name</span>
+                    @if (!string.IsNullOrEmpty(GameState.OpponentsName))
+                    {
+                        <span class="versus">VS</span>
+                        <span class="player-badge opponent">@GameState.OpponentsName</span>
+                    }
+                </div>
+            </div>
+        }
+        else if (GameState.Stage == GameStageEnum.Game)
+        {
+            <div class="battle-phase">
+                <h2>Battle in Progress</h2>
+
+                <div class="turn-status-container">
+                    @if (GameState.Player.State == PlayerStateEnum.InTurn)
+                    {
+                        <div class="turn-status your-turn">
+                            <div class="status-icon">
+                                <div class="pulse-ring"></div>
+                                <span class="oi oi-target" aria-hidden="true"></span>
+                            </div>
+                            <div class="status-text">YOUR TURN</div>
+                        </div>
+                    }
+                    else if (GameState.Player.State == PlayerStateEnum.WaitingForTurn)
+                    {
+                        <div class="turn-status waiting-turn">
+                            <div class="status-icon">
+                                <div class="waiting-animation"></div>
+                                <span class="oi oi-clock" aria-hidden="true"></span>
+                            </div>
+                            <div class="status-text">WAITING FOR OPPONENT</div>
+                        </div>
+                    }
+                </div>
+
+                <div class="player-info">
+                    <span class="player-badge @(GameState.Player.State == PlayerStateEnum.InTurn ? "active" : "")">
+                        @GameState.Player.Name
+                    </span>
+                    <span class="versus">VS</span>
+                    <span class="player-badge opponent @(GameState.Player.State == PlayerStateEnum.WaitingForTurn ? "active" : "")">
+                        @GameState.OpponentsName
+                    </span>
+                </div>
+            </div>
+        }
+        else if (GameState.Stage == GameStageEnum.GameOver)
+        {
+            <div class="game-over">
+                <h2 class="@(GameState.Player.State == PlayerStateEnum.Won ? "win" : "lost")">
+                    @(GameState.Player.State == PlayerStateEnum.Won ? "VICTORY!" : "DEFEAT!")
+                </h2>
+                <div class="player-info">
+                    <span class="player-badge @(GameState.Player.State == PlayerStateEnum.Won ? "winner" : "")">
+                        @GameState.Player.Name
+                    </span>
+                    <span class="versus">VS</span>
+                    <span class="player-badge opponent @(GameState.Player.State != PlayerStateEnum.Won ? "winner" : "")">
+                        @GameState.OpponentsName
+                    </span>
+                </div>
+                <p>The battle has ended. Would you like to play again?</p>
+            </div>
+        }
     </div>
-}
-else if (GameState.Stage == GameStageEnum.GameOver)
-{
-
-}
-
-@* @if (!IsStarted)
-{
-    <label>Welcome to the Sea Battle</label>
-
-    @if (!WaitingOpponent)
-    {
-        <div class="text-center mb-1">
-            Now postion your ships and press <b>Ready</b> button
-        </div>
-    }
-}
-else
-{
-    if (_gameIsOver)
-    {
-        <div class="text-center mb-1 @_gameOverClass">
-            <h2>@_gameOverString</h2>
-        </div>
-    }
-    else
-    {
-        <div class="text-center mb-1">
-            Battle is on!
-        </div>
-
-        <div class="text-center mb-1">
-            @if (WaitingForShot)
-            {
-                <b>It is your shot</b>
-            }
-            else
-            {
-                <b>Waitng for oponent's shot</b>
-            }
-        </div>
-    }
-} *@
+</div>
 
 @code {
     [CascadingParameter]
     public required GameStateClient GameState { get; set; }
 
-    private string Names => GameState.Player?.Name + (string.IsNullOrEmpty(GameState.OpponentsName) ? "" : $"VS {GameState.OpponentsName}");
+    private string GetStateClass()
+    {
+        return GameState.Stage switch
+        {
+            GameStageEnum.Setup => "setup-state",
+            GameStageEnum.Game => "game-state",
+            GameStageEnum.GameOver => "gameover-state",
+            _ => string.Empty
+        };
+    }
 }
