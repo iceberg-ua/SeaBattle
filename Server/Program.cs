@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.ResponseCompression;
 using SeaBattle.Server.Hubs;
+using SeaBattle.Server.Services;
 using SeaBattle.Shared;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -14,7 +15,9 @@ builder.Services.AddResponseCompression(opts =>
     opts.MimeTypes = ResponseCompressionDefaults.MimeTypes.Concat(
         new[] { "application/octet-stream" });
 });
+
 builder.Services.AddSingleton<GlobalGameStorage>();
+builder.Services.AddSingleton<GameService>();
 
 var app = builder.Build();
 
