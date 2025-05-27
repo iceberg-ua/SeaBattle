@@ -52,52 +52,18 @@ public interface IGameHub
     Task JoinedGame(GameStateClient? gameState);
 
     /// <summary>
-    /// Updates the state of cells on the player's board after an action.
+    /// Updates the complete game state on the client.
+    /// Replaces multiple incremental update methods with a single comprehensive state update.
     /// </summary>
-    /// <param name="hits">Dictionary mapping cell indices to their new states</param>
-    /// <param name="full">Indicates if this is a full board update</param>
+    /// <param name="gameState">Complete updated game state</param>
     /// <returns>A task representing the asynchronous operation</returns>
-    Task UpdateCellState(Dictionary<int, CellState> hits, bool full);
-
-    /// <summary>
-    /// Clears all cells on the client's game field.
-    /// </summary>
-    /// <returns>A task representing the asynchronous operation</returns>
-    Task ClearField();
-
-    /// <summary>
-    /// Updates the ready status of the player.
-    /// </summary>
-    /// <param name="ready">True if player is ready, false otherwise</param>
-    /// <returns>A task representing the asynchronous operation</returns>
-    Task SetReady(bool ready);
-
-    /// <summary>
-    /// Updates the state of cells on the enemy's board after an action.
-    /// </summary>
-    /// <param name="hits">Dictionary mapping cell indices to their new states</param>
-    /// <returns>A task representing the asynchronous operation</returns>
-    Task UpdateEnemyCellState(Dictionary<int, CellState> hits);
-
-    /// <summary>
-    /// Notifies the client that the fleet placement state has changed.
-    /// </summary>
-    /// <param name="fleetReady">True if fleet placement is complete, false otherwise</param>
-    /// <returns>A task representing the asynchronous operation</returns>
-    Task StateChanged(bool fleetReady);
+    Task UpdateGameState(GameStateClient gameState);
 
     /// <summary>
     /// Notifies the client that the game has officially started.
     /// </summary>
     /// <returns>A task representing the asynchronous operation</returns>
     Task GameStarted();
-
-    /// <summary>
-    /// Signals a change in turn between players.
-    /// </summary>
-    /// <param name="move">True if it's this player's turn, false otherwise</param>
-    /// <returns>A task representing the asynchronous operation</returns>
-    Task MoveTransition(bool move);
 
     /// <summary>
     /// Notifies the client that the game has ended.

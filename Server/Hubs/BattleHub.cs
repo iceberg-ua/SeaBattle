@@ -8,7 +8,6 @@ namespace SeaBattle.Server.Hubs;
 class BattleHub(GlobalGameStorage storage, GameService gameService) : Hub<IGameHub>
 {
     private GlobalGameStorage GameStorage { get; } = storage;
-
     private GameService GameService { get; } = gameService;
 
     private GameState GetGameState(Guid playerId) => GameStorage.GetGameByPlayerId(playerId) ??
@@ -31,7 +30,7 @@ class BattleHub(GlobalGameStorage storage, GameService gameService) : Hub<IGameH
             await Groups.AddToGroupAsync(Context.ConnectionId, playerId.ToString());
         }
 
-        await Clients.Caller.JoinedGame(GameService.GetClientGameState(gameState, playerId));
+        await Clients.Caller.JoinedGame(GameService.GetClientGameState(gameState, playerId, includeEnemyField: gameState?.InProgress ?? false));
     }
 
     public async Task PlayerReady(Guid playerId)
@@ -39,14 +38,28 @@ class BattleHub(GlobalGameStorage storage, GameService gameService) : Hub<IGameH
         var gameState = GetGameState(playerId);
         GameService.SetPlayerReady(gameState, playerId);
 
-        await Clients.Group(playerId.ToString()).SetReady(true);
+        // Send updated state to the ready player
+        var readyPlayerState = GameService.CreateGameStateUpdate(gameState, playerId);
+        await Clients.Group(playerId.ToString()).UpdateGameState(readyPlayerState);
 
         if (gameState.InProgress)
         {
             await Clients.Group(gameState.Id.ToString()).GameStarted();
 
+            // Set random player to start
             var randomPlayer = gameState.Players.Keys.ElementAt(Random.Shared.Next(0, gameState.Players.Count));
-            await Clients.Groups(randomPlayer.ToString()).MoveTransition(true);
+            var firstPlayer = gameState.Players[randomPlayer];
+            var secondPlayer = gameState.Players.Values.First(p => p.PlayerId != randomPlayer);
+            
+            firstPlayer.SetInTurn();
+            secondPlayer.SetWaitingForTurn();
+
+            // Send complete state updates to both players
+            var firstPlayerState = GameService.CreateGameStateUpdate(gameState, randomPlayer);
+            var secondPlayerState = GameService.CreateGameStateUpdate(gameState, secondPlayer.PlayerId);
+            
+            await Clients.Group(randomPlayer.ToString()).UpdateGameState(firstPlayerState);
+            await Clients.Group(secondPlayer.PlayerId.ToString()).UpdateGameState(secondPlayerState);
         }
     }
 
@@ -61,47 +74,59 @@ class BattleHub(GlobalGameStorage storage, GameService gameService) : Hub<IGameH
             if (playerState.Shots.Contains((x, y)))
                 return;
 
-            var oponent = gameState?.Players.FirstOrDefault(p => p.Key != playerId) ??
-                          throw new Exception("Couldn't find players game state");
-            var oponentState = oponent.Value;
-            var shotResult = oponentState.CheckShotResult(x, y);
+            var opponent = gameState?.Players.FirstOrDefault(p => p.Key != playerId) ??
+                          throw new Exception("Couldn't find opponent's game state");
+            var opponentState = opponent.Value;
+            var shotResult = opponentState.CheckShotResult(x, y);
 
             if (shotResult != null)
             {
                 playerState.Shots.Push((x, y));
 
-                await Clients.Group(oponent.Key.ToString()).UpdateCellState(shotResult, true);
-                await Clients.Group(playerId.ToString()).UpdateEnemyCellState(shotResult);
-
-                if (oponentState.Fleet.Ships.Count == 0)
+                // Check for game over
+                if (opponentState.Fleet.Ships.Count == 0)
                 {
                     gameState.Stage = GameStageEnum.GameOver;
                     playerState.SetWon();
-                    await Clients.Groups(playerId.ToString()).GameOver(win: true);
-                    oponentState.SetLost();
-                    await Clients.Groups(oponent.Key.ToString()).GameOver(win: false);
+                    opponentState.SetLost();
+
+                    // Send final game states
+                    var winnerState = GameService.CreateGameStateUpdate(gameState, playerId);
+                    var loserState = GameService.CreateGameStateUpdate(gameState, opponent.Key);
+                    
+                    await Clients.Group(playerId.ToString()).UpdateGameState(winnerState);
+                    await Clients.Group(opponent.Key.ToString()).UpdateGameState(loserState);
+                    
+                    await Clients.Group(playerId.ToString()).GameOver(win: true);
+                    await Clients.Group(opponent.Key.ToString()).GameOver(win: false);
 
                     return;
                 }
                 else if (!shotResult.Any(s => s.Value == CellState.hit))
                 {
-                    oponentState.SetInTurn();
-                    await Clients.Groups(oponent.Key.ToString()).MoveTransition(move: true);
+                    // Miss - switch turns
+                    opponentState.SetInTurn();
                     playerState.SetWaitingForTurn();
-                    await Clients.Groups(playerId.ToString()).MoveTransition(move: false);
                 }
+                // If hit but not game over, current player continues
+
+                // Send updated states to both players
+                var currentPlayerState = GameService.CreateGameStateUpdate(gameState, playerId);
+                var opponentPlayerState = GameService.CreateGameStateUpdate(gameState, opponent.Key);
+                
+                await Clients.Group(playerId.ToString()).UpdateGameState(currentPlayerState);
+                await Clients.Group(opponent.Key.ToString()).UpdateGameState(opponentPlayerState);
             }
         }
         else
         {
             var playerState = gameState.Players[playerId];
-            var pos = x * gameState.Size + y;
 
             if (playerState.TryToUpdateState(x, y))
             {
-                var cellState = playerState.Field[pos];
-                await Clients.Group(playerId.ToString())
-                    .UpdateCellState(new() { { pos, cellState } }, playerState.Fleet.Complete);
+                // Send complete updated state
+                var updatedState = GameService.CreateGameStateUpdate(gameState, playerId);
+                await Clients.Group(playerId.ToString()).UpdateGameState(updatedState);
             }
         }
     }
@@ -113,6 +138,8 @@ class BattleHub(GlobalGameStorage storage, GameService gameService) : Hub<IGameH
 
         playerState.ClearField();
 
-        await Clients.Group(playerId.ToString()).ClearField();
+        // Send complete updated state
+        var updatedState = GameService.CreateGameStateUpdate(gameState, playerId);
+        await Clients.Group(playerId.ToString()).UpdateGameState(updatedState);
     }
 }

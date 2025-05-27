@@ -7,8 +7,8 @@
         
         <HeaderComponent></HeaderComponent>
         
-        <GameBoard Field=_field 
-                   EnemyField=_enemyField
+        <GameBoard Field=GameState.OwnField 
+                   EnemyField=GameState.EnemyField
                    CellClicked=FieldCellClicked></GameBoard>
 
         @if (!IsStarted && !IsReady)

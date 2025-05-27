@@ -30,25 +30,55 @@ public class GameService
     }
 
     /// <summary>
-    /// Retrieves the game state for a specific player, including player information,
-    /// opponent's name, and the current stage of the game.
+    /// Retrieves the complete game state for a specific player, including all field states.
     /// </summary>
-    /// <param name="playerId">The unique identifier of the player.</param>
-    /// <returns>A GameStateClient object containing the player's game state information. The object for client side state handling.</returns>
-    public GameStateClient? GetClientGameState(GameState? game, Guid playerId)
+    /// <param name="game">The game state</param>
+    /// <param name="playerId">The unique identifier of the player</param>
+    /// <param name="includeEnemyField">Whether to include the enemy field state (for active games)</param>
+    /// <returns>A complete GameStateClient object with all necessary state information</returns>
+    public GameStateClient? GetClientGameState(GameState? game, Guid playerId, bool includeEnemyField = false)
     {
-        if (game == null)
+        if (game == null || !game.Players.ContainsKey(playerId))
             return null;
 
-        var playerInfo = game.Players[playerId]?.GetPlayerInfo();
+        var player = game.Players[playerId];
         var opponentInfo = GetOpponent(game, playerId);
 
-        return new GameStateClient()
+        var gameState = new GameStateClient()
         {
-            Player = playerInfo!,
+            Player = player!.GetPlayerInfo(),
             OpponentsName = opponentInfo?.Name,
             FieldSize = game.Size,
             Stage = game.Stage
         };
+
+        gameState.InitializeFields();
+        gameState.UpdateOwnFieldFromPlayer();
+
+        if (includeEnemyField && opponentInfo != null)
+        {
+            foreach (var (x, y) in player.Shots)
+            {
+                var index = x * game.Size + y;
+
+                if (index >= 0 && index < gameState.EnemyField.Length)
+                {
+                    gameState.EnemyField[index] = opponentInfo.Field[index];
+                }
+            }
+        }
+
+        return gameState;
+    }
+    
+    /// <summary>
+    /// Creates a complete game state update for a player based on current game state.
+    /// </summary>
+    /// <param name="game">The current game state</param>
+    /// <param name="playerId">The player to create the update for</param>
+    /// <returns>Complete game state for the client</returns>
+    public GameStateClient CreateGameStateUpdate(GameState game, Guid playerId)
+    {
+        return GetClientGameState(game, playerId, includeEnemyField: game.InProgress)!;
     }
 }
