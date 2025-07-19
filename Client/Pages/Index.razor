@@ -2,22 +2,25 @@
 
 @inject IJSRuntime JsRuntime
 
-<div class="container centered-form">
-    <div class="text-center mb-3">
-        
-        <HeaderComponent></HeaderComponent>
-        
-        <GameBoard Field=GameState.OwnField 
-                   EnemyField=GameState.EnemyField
-                   CellClicked=FieldCellClicked></GameBoard>
+@if (GameStateService.HasState)
+{
+    <div class="container centered-form">
+        <div class="text-center mb-3">
+            
+            <HeaderComponent></HeaderComponent>
+            
+            <GameBoard Field=GameState.OwnField 
+                       EnemyField=GameState.EnemyField
+                       CellClicked=FieldCellClicked></GameBoard>
 
-        @if (!IsStarted && !IsReady)
-        {
-            <div class="button-container">
-                <button class="btn btn-danger" disabled="@ClearButtonDisable" @onclick=ClearButtonClicked>Clear</button>
-                <button class="btn btn-success" disabled="@(!FleetComplete)" @onclick=OnReadyButtonClick>Ready</button>
-            </div>
-        }
+            @if (!IsStarted && !IsReady)
+            {
+                <div class="button-container">
+                    <button class="btn btn-danger" disabled="@ClearButtonDisable" @onclick=ClearButtonClicked>Clear</button>
+                    <button class="btn btn-success" disabled="@(!FleetComplete)" @onclick=OnReadyButtonClick>Ready</button>
+                </div>
+            }
+        </div>
     </div>
-</div>
+}
 

@@ -11,12 +11,14 @@ public partial class MainLayout
     public RenderFragment? Body { get; set; }
 
     public HubConnection BattleHub { get; private set; } = null!;
-    public GameStateClient GameState { get; set; } = null!;
 
     private bool _initialized;
 
     protected override async Task OnInitializedAsync()
     {
+        // Subscribe to game state changes
+        GameStateService.StateChanged += OnGameStateChanged;
+        
         BattleHub = new HubConnectionBuilder()
             .WithUrl(Navigation.ToAbsoluteUri("/battlehub"))
             .Build();
@@ -45,16 +47,22 @@ public partial class MainLayout
             Navigation.NavigateTo("/sign-in");
         else
         {
-            GameState = gameState;
-            await LocalStorage.SetItemAsync("player", GameState.Player.Id);
+            GameStateService.UpdateGameState(gameState);
+            await LocalStorage.SetItemAsync("player", gameState.Player.Id);
             Navigation.NavigateTo("/");
         }
+    }
+    
+    private void OnGameStateChanged(GameStateClient? newState)
+    {
+        InvokeAsync(StateHasChanged);
     }
 
     #endregion
 
     public async ValueTask DisposeAsync()
     {
+        GameStateService.StateChanged -= OnGameStateChanged;
         await BattleHub.DisposeAsync();
     }
 }

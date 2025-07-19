@@ -5,8 +5,7 @@ namespace SeaBattle.Client.Components;
 
 public partial class GameBoard
 {
-    [CascadingParameter]
-    public required GameStateClient GameState { get; set; }
+    private GameStateClient? GameState => GameStateService.GameState;
 
     [Parameter]
     public EventCallback<(int, int)> CellClicked { get; set; }
@@ -17,9 +16,9 @@ public partial class GameBoard
     [Parameter]
     public CellState[] EnemyField { get; set; } = null!;
 
-    private bool OwnFieldDisabled => GameState.Player.State is not PlayerStateEnum.Formation;
+    private bool OwnFieldDisabled => GameState?.Player.State is not PlayerStateEnum.Formation;
 
-    private bool EnemyFieldDisabled => GameState.Player.State is PlayerStateEnum.WaitingForTurn;
+    private bool EnemyFieldDisabled => GameState?.Player.State is PlayerStateEnum.WaitingForTurn;
 
     private async void OnCellClicked((int x, int y) cell)
     {

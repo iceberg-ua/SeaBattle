@@ -12,10 +12,8 @@ public partial class Index
     [CascadingParameter]
     public HubConnection BattleHub { get; set; } = null!;
 
-    [CascadingParameter]
-    public required GameStateClient GameState { get; set; }
-
-    public PlayerInfo Player => GameState.Player!;
+    private GameStateClient? GameState => GameStateService.GameState;
+    public PlayerInfo Player => GameState?.Player!;
 
     public bool _gameIsOver = false;
     public string _gameOverString = string.Empty;
@@ -32,10 +30,10 @@ public partial class Index
     }
 
     // Computed properties based on GameState
-    private bool ClearButtonDisable => GameState.OwnField.All(c => c == CellState.empty);
-    private bool FleetComplete => GameState.Player.State != PlayerStateEnum.Formation && GameState.OwnField.Any(c => c == CellState.ship);
-    private bool IsStarted => GameState.Stage == GameStageEnum.Game;
-    private bool IsReady => GameState.Player.State == PlayerStateEnum.Ready;
+    private bool ClearButtonDisable => GameState?.OwnField.All(c => c == CellState.empty) ?? true;
+    private bool FleetComplete => GameState?.Player.State != PlayerStateEnum.Formation && GameState?.OwnField.Any(c => c == CellState.ship) == true;
+    private bool IsStarted => GameState?.Stage == GameStageEnum.Game;
+    private bool IsReady => GameState?.Player.State == PlayerStateEnum.Ready;
 
     #region Events
 
@@ -66,13 +64,9 @@ public partial class Index
     /// </summary>
     private async Task OnUpdateGameState(GameStateClient updatedState)
     {
-        // Update the entire game state
-        GameState.Player = updatedState.Player;
-        GameState.OpponentsName = updatedState.OpponentsName;
-        GameState.Stage = updatedState.Stage;
-        GameState.OwnField = updatedState.OwnField;
-        GameState.EnemyField = updatedState.EnemyField;
-
+        // Update the game state through the service
+        GameStateService.UpdateGameState(updatedState);
+        
         await InvokeAsync(StateHasChanged);
     }
 
