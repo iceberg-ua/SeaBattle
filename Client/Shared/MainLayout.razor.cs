@@ -25,6 +25,7 @@ public partial class MainLayout
 
         //subscribe to server event when game is created/found and player is joined to it
         BattleHub.On<GameStateClient>(nameof(IGameHub.JoinedGame), OnJoinedGame);
+        BattleHub.On<string>(nameof(IGameHub.Error), OnError);
 
         await BattleHub.StartAsync();
         await TryGetPlayerState();
@@ -56,6 +57,20 @@ public partial class MainLayout
     private void OnGameStateChanged(GameStateClient? newState)
     {
         InvokeAsync(StateHasChanged);
+    }
+
+    private async Task OnError(string message)
+    {
+        // Log error and potentially redirect to sign-in for critical errors
+        Console.WriteLine($"Hub Error: {message}");
+        
+        // If it's a critical connection error, redirect to sign-in
+        if (message.Contains("Invalid player ID") || message.Contains("Game not found"))
+        {
+            Navigation.NavigateTo("/sign-in");
+        }
+        
+        await InvokeAsync(StateHasChanged);
     }
 
     #endregion

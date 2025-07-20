@@ -72,5 +72,12 @@ public interface IGameHub
     /// <returns>A task representing the asynchronous operation</returns>
     Task GameOver(bool win);
 
+    /// <summary>
+    /// Notifies the client of an error that occurred during game operations.
+    /// </summary>
+    /// <param name="message">Error message to display to the user</param>
+    /// <returns>A task representing the asynchronous operation</returns>
+    Task Error(string message);
+
     #endregion
 }

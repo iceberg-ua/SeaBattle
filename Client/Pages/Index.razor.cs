@@ -25,6 +25,7 @@ public partial class Index
         BattleHub.On<GameStateClient>(nameof(IGameHub.UpdateGameState), OnUpdateGameState);
         BattleHub.On(nameof(IGameHub.GameStarted), OnGameStarted);
         BattleHub.On<bool>(nameof(IGameHub.GameOver), OnGameOver);
+        BattleHub.On<string>(nameof(IGameHub.Error), OnError);
 
         return base.OnInitializedAsync();
     }
@@ -84,6 +85,14 @@ public partial class Index
         _gameIsOver = true;
 
         // Final state update will come via OnUpdateGameState
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task OnError(string message)
+    {
+        // For now, log to console. In production, you might want to show a toast notification
+        // or update the UI to display the error message
+        Console.WriteLine($"Game Error: {message}");
         await InvokeAsync(StateHasChanged);
     }
 
