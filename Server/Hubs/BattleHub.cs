@@ -151,7 +151,8 @@ class BattleHub(GlobalGameStorage storage, GameService gameService, ILogger<Batt
                     return;
                 }
 
-                if (playerState.Shots.Contains((x, y)))
+                // Use optimized O(1) duplicate shot check instead of O(n) Contains()
+                if (playerState.HasShotAt(x, y))
                     return;
 
                 var opponent = gameState.Players.FirstOrDefault(p => p.Key != playerId);
@@ -167,7 +168,20 @@ class BattleHub(GlobalGameStorage storage, GameService gameService, ILogger<Batt
 
                 if (shotResult != null)
                 {
-                    playerState.Shots.Push((x, y));
+                    // Use optimized shot recording instead of just pushing to stack
+                    if (shotResult.Count == 1)
+                    {
+                        // Single shot result
+                        var singleResult = shotResult.First();
+                        var shotX = singleResult.Key / gameState.Size;
+                        var shotY = singleResult.Key % gameState.Size;
+                        playerState.RecordShotResult(shotX, shotY, singleResult.Value);
+                    }
+                    else
+                    {
+                        // Multiple results (ship destroyed + adjacent cells)
+                        playerState.RecordMultipleShotResults(shotResult, x, y);
+                    }
 
                     // Check for game over
                     if (opponentState.Fleet.Ships.Count == 0)

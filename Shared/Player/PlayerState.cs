@@ -14,6 +14,7 @@ public class PlayerState
 
         Field = new CellState[FieldSize * FieldSize];
         Shots = new(FieldSize * FieldSize);
+        EnemyFieldState = new CellState[FieldSize * FieldSize];
     }
 
     #region Properties
@@ -35,6 +36,12 @@ public class PlayerState
     public Fleet Fleet { get; } = new();
 
     public Stack<(int, int)> Shots { get; }
+    
+    /// <summary>
+    /// Optimized shot tracking: stores the revealed enemy field state directly
+    /// instead of reconstructing it from shot coordinates every time.
+    /// </summary>
+    public CellState[] EnemyFieldState { get; private set; }
 
     #endregion
     
@@ -141,6 +148,103 @@ public class PlayerState
         return new Dictionary<int, CellState>() { { CellIndex(x, y), CellState.hit } };
     }
     
+    /// <summary>
+    /// Records a shot result directly to the enemy field state for optimized access.
+    /// Maintains both the sequential shot history AND the optimized field cache.
+    /// </summary>
+    /// <param name="x">X coordinate of the shot</param>
+    /// <param name="y">Y coordinate of the shot</param>
+    /// <param name="result">The result of the shot (hit, miss, etc.)</param>
+    public void RecordShotResult(int x, int y, CellState result)
+    {
+        // Maintain sequential shot history for game replay/undo functionality
+        Shots.Push((x, y));
+        
+        // Update optimized enemy field cache for fast access
+        var index = x * FieldSize + y;
+        if (index >= 0 && index < EnemyFieldState.Length)
+        {
+            EnemyFieldState[index] = result;
+        }
+    }
+
+    /// <summary>
+    /// Records multiple shot results at once (for when a ship is destroyed and adjacent cells are revealed).
+    /// Maintains shot sequence by only recording the actual player shot, not the revealed adjacent cells.
+    /// </summary>
+    /// <param name="shotResults">Dictionary of cell indices and their states</param>
+    /// <param name="actualShotX">X coordinate of the actual shot (not adjacent reveals)</param>
+    /// <param name="actualShotY">Y coordinate of the actual shot (not adjacent reveals)</param>
+    public void RecordMultipleShotResults(Dictionary<int, CellState> shotResults, int actualShotX, int actualShotY)
+    {
+        // Maintain sequential shot history for the actual shot only
+        Shots.Push((actualShotX, actualShotY));
+        
+        // Update optimized enemy field cache for all revealed cells
+        foreach (var (index, state) in shotResults)
+        {
+            if (index >= 0 && index < EnemyFieldState.Length)
+            {
+                EnemyFieldState[index] = state;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Gets the sequential shot history as a list (oldest to newest).
+    /// Useful for game replay, analysis, or displaying move history.
+    /// </summary>
+    /// <returns>List of shots in chronological order</returns>
+    public List<(int X, int Y)> GetShotHistory()
+    {
+        return Shots.Reverse().ToList();
+    }
+
+    /// <summary>
+    /// Gets the last N shots from history.
+    /// Useful for showing recent moves or implementing undo functionality.
+    /// </summary>
+    /// <param name="count">Number of recent shots to retrieve</param>
+    /// <returns>List of recent shots (newest first)</returns>
+    public List<(int X, int Y)> GetRecentShots(int count)
+    {
+        return Shots.Take(count).ToList();
+    }
+
+    /// <summary>
+    /// Checks if a specific coordinate has been shot at.
+    /// Uses the optimized cache for O(1) lookup instead of iterating through shot history.
+    /// </summary>
+    /// <param name="x">X coordinate</param>
+    /// <param name="y">Y coordinate</param>
+    /// <returns>True if this coordinate has been shot at</returns>
+    public bool HasShotAt(int x, int y)
+    {
+        var index = x * FieldSize + y;
+        return index >= 0 && index < EnemyFieldState.Length && EnemyFieldState[index] != CellState.empty;
+    }
+
+    /// <summary>
+    /// Rebuilds the enemy field cache from shot history.
+    /// Used for data consistency checks or after undo operations.
+    /// </summary>
+    /// <param name="opponentField">The opponent's actual field to reference</param>
+    public void RebuildEnemyFieldFromHistory(CellState[] opponentField)
+    {
+        // Clear the cache
+        EnemyFieldState = new CellState[FieldSize * FieldSize];
+        
+        // Rebuild from shot history (this is the O(n) operation we normally avoid)
+        foreach (var (x, y) in Shots)
+        {
+            var index = x * FieldSize + y;
+            if (index >= 0 && index < EnemyFieldState.Length)
+            {
+                EnemyFieldState[index] = opponentField[index];
+            }
+        }
+    }
+
     ///<summary>
     /// Clears the player's field and fleet.
     /// Resets the field to an empty state and clears all ships from the fleet.
@@ -149,6 +253,8 @@ public class PlayerState
     {
         Field = new CellState[FieldSize * FieldSize];
         Fleet.Clear();
+        // Also clear enemy field state when clearing
+        EnemyFieldState = new CellState[FieldSize * FieldSize];
     }
     
     #endregion

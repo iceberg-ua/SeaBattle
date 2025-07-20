@@ -57,19 +57,13 @@ public class GameService
 
         if (includeEnemyField && opponentInfo != null)
         {
-            foreach (var (x, y) in player.Shots)
-            {
-                var index = x * game.Size + y;
-
-                if (index >= 0 && index < gameState.EnemyField.Length)
-                {
-                    gameState.EnemyField[index] = opponentInfo.Field[index];
-                }
-            }
+            // Use the optimized pre-built enemy field state instead of reconstructing from shots
+            Array.Copy(player.EnemyFieldState, gameState.EnemyField, player.EnemyFieldState.Length);
         }
 
         return gameState;
     }
+
     
     /// <summary>
     /// Creates a complete game state update for a player based on current game state.
@@ -81,4 +75,5 @@ public class GameService
     {
         return GetClientGameState(game, playerId, includeEnemyField: game.InProgress)!;
     }
+
 }
