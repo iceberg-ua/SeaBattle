@@ -32,7 +32,7 @@ public class GameLockingService
     /// </summary>
     /// <param name="gameId">The ID of the game to lock</param>
     /// <param name="action">The async action to execute with exclusive game access</param>
-    public async Task ExecuteWithGameLockAsync(Guid gameId, Func<Task> action)
+    public Task ExecuteWithGameLockAsync(Guid gameId, Func<Task> action)
     {
         var gameLock = _gameLocks.GetOrAdd(gameId, _ => new Lock());
         
@@ -42,6 +42,8 @@ public class GameLockingService
             // Using ConfigureAwait(false) to avoid potential deadlocks
             action().ConfigureAwait(false).GetAwaiter().GetResult();
         }
+        
+        return Task.CompletedTask;
     }
 
     /// <summary>
@@ -68,7 +70,7 @@ public class GameLockingService
     /// <param name="gameId">The ID of the game to lock</param>
     /// <param name="func">The async function to execute with exclusive game access</param>
     /// <returns>The result of the function execution</returns>
-    public async Task<T> ExecuteWithGameLockAsync<T>(Guid gameId, Func<Task<T>> func)
+    public Task<T> ExecuteWithGameLockAsync<T>(Guid gameId, Func<Task<T>> func)
     {
         var gameLock = _gameLocks.GetOrAdd(gameId, _ => new Lock());
         
@@ -76,7 +78,8 @@ public class GameLockingService
         {
             // Execute async function synchronously within the lock to maintain atomicity
             // Using ConfigureAwait(false) to avoid potential deadlocks
-            return func().ConfigureAwait(false).GetAwaiter().GetResult();
+            var result = func().ConfigureAwait(false).GetAwaiter().GetResult();
+            return Task.FromResult(result);
         }
     }
 
