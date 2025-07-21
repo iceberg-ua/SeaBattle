@@ -18,6 +18,7 @@ builder.Services.AddResponseCompression(opts =>
 
 builder.Services.AddSingleton<GlobalGameStorage>();
 builder.Services.AddSingleton<GameService>();
+builder.Services.AddScoped<GameLogicService>();
 
 var app = builder.Build();
 

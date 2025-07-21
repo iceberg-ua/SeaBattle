@@ -6,10 +6,11 @@ using Microsoft.Extensions.Logging;
 
 namespace SeaBattle.Server.Hubs;
 
-class BattleHub(GlobalGameStorage storage, GameService gameService, ILogger<BattleHub> logger) : Hub<IGameHub>
+class BattleHub(GlobalGameStorage storage, GameService gameService, GameLogicService gameLogicService, ILogger<BattleHub> logger) : Hub<IGameHub>
 {
     private GlobalGameStorage GameStorage { get; } = storage;
     private GameService GameService { get; } = gameService;
+    private GameLogicService GameLogicService { get; } = gameLogicService;
     private ILogger<BattleHub> Logger { get; } = logger;
 
     private GameState? GetGameState(Guid playerId)
@@ -109,6 +110,7 @@ class BattleHub(GlobalGameStorage storage, GameService gameService, ILogger<Batt
     {
         try
         {
+            // Basic input validation
             var gameState = GetGameState(playerId);
             if (gameState == null)
             {
@@ -124,105 +126,33 @@ class BattleHub(GlobalGameStorage storage, GameService gameService, ILogger<Batt
                 return;
             }
 
-            // Validate coordinates
-            if (x < 0 || x >= gameState.Size || y < 0 || y >= gameState.Size)
-            {
-                Logger.LogWarning("Invalid coordinates ({X}, {Y}) for player {PlayerId}", x, y, playerId);
-                await Clients.Caller.Error("Invalid coordinates");
-                return;
-            }
-
             if (gameState.InProgress)
             {
-                var playerState = gameState.Players[playerId];
+                // Delegate all business logic to the service
+                var result = GameLogicService.ProcessShot(gameState, playerId, x, y);
 
-                // Check if it's the player's turn
-                if (playerState.State != PlayerStateEnum.InTurn)
+                if (!result.IsSuccess)
                 {
-                    Logger.LogWarning("Player {PlayerId} tried to shoot when not their turn", playerId);
-                    await Clients.Caller.Error("Not your turn");
+                    // Handle business logic errors
+                    await Clients.Caller.Error(result.ErrorMessage ?? "Shot processing failed");
                     return;
                 }
 
-                // Use optimized O(1) duplicate shot check instead of O(n) Contains()
-                if (playerState.HasShotAt(x, y))
-                    return;
-
-                var opponent = gameState.Players.FirstOrDefault(p => p.Key != playerId);
-                if (opponent.Key == Guid.Empty)
+                if (result.IsGameOver)
                 {
-                    Logger.LogError("Opponent not found for player {PlayerId} in game {GameId}", playerId, gameState.Id);
-                    await Clients.Caller.Error("Opponent not found");
-                    return;
+                    // Handle game over
+                    await HandleGameOver(gameState, result.WinnerId!.Value, result.LoserId!.Value);
                 }
-
-                var opponentState = opponent.Value;
-                var shotResult = opponentState.CheckShotResult(x, y);
-
-                if (shotResult != null)
+                else
                 {
-                    // Use optimized shot recording instead of just pushing to stack
-                    if (shotResult.Count == 1)
-                    {
-                        // Single shot result
-                        var singleResult = shotResult.First();
-                        var shotX = singleResult.Key / gameState.Size;
-                        var shotY = singleResult.Key % gameState.Size;
-                        playerState.RecordShotResult(shotX, shotY, singleResult.Value);
-                    }
-                    else
-                    {
-                        // Multiple results (ship destroyed + adjacent cells)
-                        playerState.RecordMultipleShotResults(shotResult, x, y);
-                    }
-
-                    // Check for game over
-                    if (opponentState.Fleet.Ships.Count == 0)
-                    {
-                        gameState.Stage = GameStageEnum.GameOver;
-                        playerState.SetWon();
-                        opponentState.SetLost();
-
-                        // Send final game states
-                        var winnerState = GameService.CreateGameStateUpdate(gameState, playerId);
-                        var loserState = GameService.CreateGameStateUpdate(gameState, opponent.Key);
-                        
-                        await Clients.Group(playerId.ToString()).UpdateGameState(winnerState);
-                        await Clients.Group(opponent.Key.ToString()).UpdateGameState(loserState);
-                        
-                        await Clients.Group(playerId.ToString()).GameOver(win: true);
-                        await Clients.Group(opponent.Key.ToString()).GameOver(win: false);
-
-                        // Clean up the game
-                        GameStorage.RemoveGame(gameState.Id);
-                        return;
-                    }
-                    else if (!shotResult.Any(s => s.Value == CellState.hit))
-                    {
-                        // Miss - switch turns
-                        opponentState.SetInTurn();
-                        playerState.SetWaitingForTurn();
-                    }
-                    // If hit but not game over, current player continues
-
-                    // Send updated states to both players
-                    var currentPlayerState = GameService.CreateGameStateUpdate(gameState, playerId);
-                    var opponentPlayerState = GameService.CreateGameStateUpdate(gameState, opponent.Key);
-                    
-                    await Clients.Group(playerId.ToString()).UpdateGameState(currentPlayerState);
-                    await Clients.Group(opponent.Key.ToString()).UpdateGameState(opponentPlayerState);
+                    // Handle normal shot result
+                    await HandleShotResult(gameState, playerId, result);
                 }
             }
             else
             {
-                var playerState = gameState.Players[playerId];
-
-                if (playerState.TryToUpdateState(x, y))
-                {
-                    // Send complete updated state
-                    var updatedState = GameService.CreateGameStateUpdate(gameState, playerId);
-                    await Clients.Group(playerId.ToString()).UpdateGameState(updatedState);
-                }
+                // Handle formation phase (ship placement)
+                await HandleFormationPhase(gameState, playerId, x, y);
             }
         }
         catch (Exception ex)
@@ -270,6 +200,57 @@ class BattleHub(GlobalGameStorage storage, GameService gameService, ILogger<Batt
         {
             Logger.LogError(ex, "Error in ClearField for player {PlayerId}", playerId);
             await Clients.Caller.Error("Failed to clear field");
+        }
+    }
+
+    /// <summary>
+    /// Handles communication for game over scenario.
+    /// </summary>
+    private async Task HandleGameOver(GameState gameState, Guid winnerId, Guid loserId)
+    {
+        // Send final game states
+        var winnerState = GameService.CreateGameStateUpdate(gameState, winnerId);
+        var loserState = GameService.CreateGameStateUpdate(gameState, loserId);
+        
+        await Clients.Group(winnerId.ToString()).UpdateGameState(winnerState);
+        await Clients.Group(loserId.ToString()).UpdateGameState(loserState);
+        
+        // Send game over notifications
+        await Clients.Group(winnerId.ToString()).GameOver(win: true);
+        await Clients.Group(loserId.ToString()).GameOver(win: false);
+
+        // Clean up the game
+        GameStorage.RemoveGame(gameState.Id);
+    }
+
+    /// <summary>
+    /// Handles communication for normal shot results.
+    /// </summary>
+    private async Task HandleShotResult(GameState gameState, Guid currentPlayerId, ShotProcessingResult result)
+    {
+        // Find opponent for state updates
+        var opponentId = gameState.Players.Keys.First(id => id != currentPlayerId);
+
+        // Send updated states to both players
+        var currentPlayerState = GameService.CreateGameStateUpdate(gameState, currentPlayerId);
+        var opponentPlayerState = GameService.CreateGameStateUpdate(gameState, opponentId);
+        
+        await Clients.Group(currentPlayerId.ToString()).UpdateGameState(currentPlayerState);
+        await Clients.Group(opponentId.ToString()).UpdateGameState(opponentPlayerState);
+    }
+
+    /// <summary>
+    /// Handles communication for formation phase (ship placement).
+    /// </summary>
+    private async Task HandleFormationPhase(GameState gameState, Guid playerId, int x, int y)
+    {
+        var playerState = gameState.Players[playerId];
+
+        if (playerState.TryToUpdateState(x, y))
+        {
+            // Send complete updated state
+            var updatedState = GameService.CreateGameStateUpdate(gameState, playerId);
+            await Clients.Group(playerId.ToString()).UpdateGameState(updatedState);
         }
     }
 }
