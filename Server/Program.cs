@@ -30,6 +30,7 @@ builder.Services.AddScoped<GameLogicService>();
 // Infrastructure services
 builder.Services.AddSingleton<IGameRepository, InMemoryGameRepository>();
 builder.Services.AddScoped<IDomainEventPublisher, LoggingDomainEventPublisher>();
+builder.Services.AddSingleton<GameLockingService>();
 
 var app = builder.Build();
 

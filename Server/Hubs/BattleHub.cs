@@ -6,11 +6,12 @@ using Microsoft.Extensions.Logging;
 
 namespace SeaBattle.Server.Hubs;
 
-class BattleHub(GlobalGameStorage storage, GameService gameService, GameLogicService gameLogicService, ILogger<BattleHub> logger) : Hub<IGameHub>
+class BattleHub(GlobalGameStorage storage, GameService gameService, GameLogicService gameLogicService, GameLockingService gameLockingService, ILogger<BattleHub> logger) : Hub<IGameHub>
 {
     private GlobalGameStorage GameStorage { get; } = storage;
     private GameService GameService { get; } = gameService;
     private GameLogicService GameLogicService { get; } = gameLogicService;
+    private GameLockingService GameLockingService { get; } = gameLockingService;
     private ILogger<BattleHub> Logger { get; } = logger;
 
     private GameState? GetGameState(Guid playerId)
@@ -73,31 +74,8 @@ class BattleHub(GlobalGameStorage storage, GameService gameService, GameLogicSer
                 return;
             }
 
-            GameService.SetPlayerReady(gameState, playerId);
-
-            // Send updated state to the ready player
-            var readyPlayerState = GameService.CreateGameStateUpdate(gameState, playerId);
-            await Clients.Group(playerId.ToString()).UpdateGameState(readyPlayerState);
-
-            if (gameState.InProgress)
-            {
-                await Clients.Group(gameState.Id.ToString()).GameStarted();
-
-                // Set random player to start
-                var randomPlayer = gameState.Players.Keys.ElementAt(Random.Shared.Next(0, gameState.Players.Count));
-                var firstPlayer = gameState.Players[randomPlayer];
-                var secondPlayer = gameState.Players.Values.First(p => p.PlayerId != randomPlayer);
-                
-                firstPlayer.SetInTurn();
-                secondPlayer.SetWaitingForTurn();
-
-                // Send complete state updates to both players
-                var firstPlayerState = GameService.CreateGameStateUpdate(gameState, randomPlayer);
-                var secondPlayerState = GameService.CreateGameStateUpdate(gameState, secondPlayer.PlayerId);
-                
-                await Clients.Group(randomPlayer.ToString()).UpdateGameState(firstPlayerState);
-                await Clients.Group(secondPlayer.PlayerId.ToString()).UpdateGameState(secondPlayerState);
-            }
+            // Use game-level locking to prevent race conditions during player ready processing
+            await GameLockingService.ExecuteWithGameLockAsync(gameState.Id, () => ProcessPlayerReadyAtomically(playerId));
         }
         catch (Exception ex)
         {
@@ -128,31 +106,54 @@ class BattleHub(GlobalGameStorage storage, GameService gameService, GameLogicSer
 
             if (gameState.InProgress)
             {
-                // Delegate all business logic to the service
-                var result = await GameLogicService.ProcessShotAsync(gameState, playerId, x, y);
+                // Use game-level locking to prevent race conditions during shot processing
+                await GameLockingService.ExecuteWithGameLockAsync(gameState.Id, async () =>
+                {
+                    // Re-fetch game state within lock to ensure we have the latest state
+                    var lockedGameState = GetGameState(playerId);
+                    if (lockedGameState == null)
+                    {
+                        await Clients.Caller.Error("Game not found");
+                        return;
+                    }
 
-                if (!result.IsSuccess)
-                {
-                    // Handle business logic errors
-                    await Clients.Caller.Error(result.ErrorMessage ?? "Shot processing failed");
-                    return;
-                }
+                    // Delegate all business logic to the service (now atomic)
+                    var result = await GameLogicService.ProcessShotAsync(lockedGameState, playerId, x, y);
 
-                if (result.IsGameOver)
-                {
-                    // Handle game over
-                    await HandleGameOver(gameState, result.WinnerId!.Value, result.LoserId!.Value);
-                }
-                else
-                {
-                    // Handle normal shot result
-                    await HandleShotResult(gameState, playerId, result);
-                }
+                    if (!result.IsSuccess)
+                    {
+                        // Handle business logic errors
+                        await Clients.Caller.Error(result.ErrorMessage ?? "Shot processing failed");
+                        return;
+                    }
+
+                    if (result.IsGameOver)
+                    {
+                        // Handle game over
+                        await HandleGameOver(lockedGameState, result.WinnerId!.Value, result.LoserId!.Value);
+                    }
+                    else
+                    {
+                        // Handle normal shot result
+                        await HandleShotResult(lockedGameState, playerId, result);
+                    }
+                });
             }
             else
             {
-                // Handle formation phase (ship placement)
-                await HandleFormationPhase(gameState, playerId, x, y);
+                // Handle formation phase (ship placement) with locking
+                await GameLockingService.ExecuteWithGameLockAsync(gameState.Id, async () =>
+                {
+                    // Re-fetch game state within lock to ensure we have the latest state
+                    var lockedGameState = GetGameState(playerId);
+                    if (lockedGameState == null)
+                    {
+                        await Clients.Caller.Error("Game not found");
+                        return;
+                    }
+                    
+                    await HandleFormationPhase(lockedGameState, playerId, x, y);
+                });
             }
         }
         catch (Exception ex)
@@ -181,20 +182,32 @@ class BattleHub(GlobalGameStorage storage, GameService gameService, GameLogicSer
                 return;
             }
 
-            // Don't allow clearing during active game
-            if (gameState.InProgress)
+            // Use game-level locking to prevent race conditions during field clearing
+            await GameLockingService.ExecuteWithGameLockAsync(gameState.Id, async () =>
             {
-                Logger.LogWarning("Player {PlayerId} tried to clear field during active game", playerId);
-                await Clients.Caller.Error("Cannot clear field during active game");
-                return;
-            }
+                // Re-fetch game state within lock to ensure we have the latest state
+                var lockedGameState = GetGameState(playerId);
+                if (lockedGameState == null)
+                {
+                    await Clients.Caller.Error("Game not found");
+                    return;
+                }
 
-            var playerState = gameState.Players[playerId];
-            playerState.ClearField();
+                // Don't allow clearing during active game
+                if (lockedGameState.InProgress)
+                {
+                    Logger.LogWarning("Player {PlayerId} tried to clear field during active game", playerId);
+                    await Clients.Caller.Error("Cannot clear field during active game");
+                    return;
+                }
 
-            // Send complete updated state
-            var updatedState = GameService.CreateGameStateUpdate(gameState, playerId);
-            await Clients.Group(playerId.ToString()).UpdateGameState(updatedState);
+                var playerState = lockedGameState.Players[playerId];
+                playerState.ClearField();
+
+                // Send complete updated state
+                var updatedState = GameService.CreateGameStateUpdate(lockedGameState, playerId);
+                await Clients.Group(playerId.ToString()).UpdateGameState(updatedState);
+            });
         }
         catch (Exception ex)
         {
@@ -219,8 +232,9 @@ class BattleHub(GlobalGameStorage storage, GameService gameService, GameLogicSer
         await Clients.Group(winnerId.ToString()).GameOver(win: true);
         await Clients.Group(loserId.ToString()).GameOver(win: false);
 
-        // Clean up the game
+        // Clean up the game and its lock
         GameStorage.RemoveGame(gameState.Id);
+        GameLockingService.CleanupGameLock(gameState.Id);
     }
 
     /// <summary>
