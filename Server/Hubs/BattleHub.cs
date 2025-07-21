@@ -29,13 +29,6 @@ class BattleHub(GlobalGameStorage storage, GameService gameService, ILogger<Batt
     {
         try
         {
-            if (playerId == Guid.Empty)
-            {
-                Logger.LogWarning("Invalid player ID provided: {PlayerId}", playerId);
-                await Clients.Caller.Error("Invalid player ID");
-                return;
-            }
-
             var gameState = GameStorage.GetGameByPlayerId(playerId);
 
             if (gameState == null && !string.IsNullOrEmpty(playerName))
