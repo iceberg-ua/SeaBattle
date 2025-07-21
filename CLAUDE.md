@@ -64,3 +64,10 @@ The application runs on:
 - Ships cannot be placed diagonally adjacent to each other
 - Shot results include automatic marking of adjacent cells when ships are destroyed
 - Player matching uses a "vacant game" system for quick pairing
+
+## Git Workflow Rules
+
+- **NEVER commit changes automatically** - Only commit when explicitly asked by the user
+- Always wait for explicit permission before running `git add` and `git commit`
+- After making code changes, inform the user what was changed and wait for commit instructions
+- User controls when and what gets committed to maintain proper git workflow
