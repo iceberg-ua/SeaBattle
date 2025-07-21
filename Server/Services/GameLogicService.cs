@@ -1,20 +1,21 @@
 using SeaBattle.Shared;
 using SeaBattle.Shared.Player;
-using Microsoft.Extensions.Logging;
+using SeaBattle.Shared.Domain.Events;
 
 namespace SeaBattle.Server.Services;
 
 /// <summary>
 /// Service responsible for all game logic and business rules.
-/// Separates business logic from SignalR communication concerns.
+/// Pure domain service without infrastructure dependencies.
+/// Communicates via domain events instead of direct logging.
 /// </summary>
 public class GameLogicService
 {
-    private readonly ILogger<GameLogicService> _logger;
+    private readonly IDomainEventPublisher _eventPublisher;
 
-    public GameLogicService(ILogger<GameLogicService> logger)
+    public GameLogicService(IDomainEventPublisher eventPublisher)
     {
-        _logger = logger;
+        _eventPublisher = eventPublisher;
     }
 
     /// <summary>
@@ -25,7 +26,7 @@ public class GameLogicService
     /// <param name="x">X coordinate of the shot</param>
     /// <param name="y">Y coordinate of the shot</param>
     /// <returns>Shot processing result with all necessary information</returns>
-    public ShotProcessingResult ProcessShot(GameState game, Guid playerId, int x, int y)
+    public async Task<ShotProcessingResult> ProcessShotAsync(GameState game, Guid playerId, int x, int y)
     {
         try
         {
@@ -33,6 +34,8 @@ public class GameLogicService
             var turnValidation = ValidatePlayerTurn(game, playerId);
             if (!turnValidation.IsValid)
             {
+                await _eventPublisher.PublishAsync(new InvalidGameActionEvent(
+                    game.Id, playerId, "Shot", turnValidation.ErrorMessage));
                 return ShotProcessingResult.InvalidTurn(turnValidation.ErrorMessage);
             }
 
@@ -40,6 +43,8 @@ public class GameLogicService
             var shotValidation = ValidateShot(game, playerId, x, y);
             if (!shotValidation.IsValid)
             {
+                await _eventPublisher.PublishAsync(new InvalidGameActionEvent(
+                    game.Id, playerId, "Shot", shotValidation.ErrorMessage));
                 return ShotProcessingResult.InvalidShot(shotValidation.ErrorMessage);
             }
 
@@ -47,7 +52,8 @@ public class GameLogicService
             var opponent = GetOpponent(game, playerId);
             if (opponent == null)
             {
-                _logger.LogError("Opponent not found for player {PlayerId} in game {GameId}", playerId, game.Id);
+                await _eventPublisher.PublishAsync(new GameErrorEvent(
+                    game.Id, playerId, "ProcessShot", "Opponent not found"));
                 return ShotProcessingResult.Error("Opponent not found");
             }
 
@@ -64,20 +70,28 @@ public class GameLogicService
             // Record the shot result
             RecordShotResult(playerState, shotResult, x, y);
 
+            // Publish shot processed event
+            await _eventPublisher.PublishAsync(new ShotProcessedEvent(
+                game.Id, playerId, x, y, 
+                shotResult.Any(s => s.Value == CellState.hit),
+                opponentState.Fleet.Ships.Count == 0,
+                $"Shot at ({x}, {y}) resulted in {shotResult.Count} cell updates"));
+
             // Check for game over
             if (IsGameOver(opponentState))
             {
-                return ProcessGameOver(game, playerId, opponent.PlayerId);
+                return await ProcessGameOverAsync(game, playerId, opponent.PlayerId);
             }
 
             // Handle turn switching based on shot result
-            var turnResult = ProcessTurnLogic(game, playerId, opponent.PlayerId, shotResult);
+            var turnResult = await ProcessTurnLogicAsync(game, playerId, opponent.PlayerId, shotResult);
 
             return ShotProcessingResult.Success(shotResult, turnResult.NextPlayerId, turnResult.GameContinues);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error processing shot for player {PlayerId} at ({X}, {Y})", playerId, x, y);
+            await _eventPublisher.PublishAsync(new GameErrorEvent(
+                game.Id, playerId, "ProcessShot", ex.Message, ex.StackTrace));
             return ShotProcessingResult.Error("Failed to process shot");
         }
     }
@@ -167,7 +181,7 @@ public class GameLogicService
     /// <summary>
     /// Processes game over logic and state transitions.
     /// </summary>
-    private ShotProcessingResult ProcessGameOver(GameState game, Guid winnerId, Guid loserId)
+    private async Task<ShotProcessingResult> ProcessGameOverAsync(GameState game, Guid winnerId, Guid loserId)
     {
         game.Stage = GameStageEnum.GameOver;
         
@@ -177,8 +191,8 @@ public class GameLogicService
         winner.SetWon();
         loser.SetLost();
 
-        _logger.LogInformation("Game {GameId} ended - Winner: {WinnerId}, Loser: {LoserId}", 
-            game.Id, winnerId, loserId);
+        await _eventPublisher.PublishAsync(new GameEndedEvent(
+            game.Id, winnerId, loserId, "All opponent ships destroyed"));
 
         return ShotProcessingResult.GameOver(winnerId, loserId);
     }
@@ -186,7 +200,7 @@ public class GameLogicService
     /// <summary>
     /// Handles turn switching logic based on shot results.
     /// </summary>
-    private TurnResult ProcessTurnLogic(GameState game, Guid currentPlayerId, Guid opponentId, Dictionary<int, CellState> shotResult)
+    private async Task<TurnResult> ProcessTurnLogicAsync(GameState game, Guid currentPlayerId, Guid opponentId, Dictionary<int, CellState> shotResult)
     {
         var currentPlayer = game.Players[currentPlayerId];
         var opponent = game.Players[opponentId];
@@ -196,6 +210,10 @@ public class GameLogicService
         {
             opponent.SetInTurn();
             currentPlayer.SetWaitingForTurn();
+            
+            await _eventPublisher.PublishAsync(new TurnChangedEvent(
+                game.Id, currentPlayerId, opponentId, "Shot missed"));
+                
             return new TurnResult(opponentId, true);
         }
 

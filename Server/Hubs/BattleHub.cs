@@ -129,7 +129,7 @@ class BattleHub(GlobalGameStorage storage, GameService gameService, GameLogicSer
             if (gameState.InProgress)
             {
                 // Delegate all business logic to the service
-                var result = GameLogicService.ProcessShot(gameState, playerId, x, y);
+                var result = await GameLogicService.ProcessShotAsync(gameState, playerId, x, y);
 
                 if (!result.IsSuccess)
                 {

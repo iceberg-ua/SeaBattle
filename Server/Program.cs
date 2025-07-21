@@ -1,7 +1,11 @@
 using Microsoft.AspNetCore.ResponseCompression;
 using SeaBattle.Server.Hubs;
 using SeaBattle.Server.Services;
+using SeaBattle.Server.Infrastructure.Events;
+using SeaBattle.Server.Infrastructure.Repositories;
 using SeaBattle.Shared;
+using SeaBattle.Shared.Domain;
+using SeaBattle.Shared.Domain.Events;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -16,9 +20,16 @@ builder.Services.AddResponseCompression(opts =>
         new[] { "application/octet-stream" });
 });
 
+// Legacy services (to be phased out)
 builder.Services.AddSingleton<GlobalGameStorage>();
 builder.Services.AddSingleton<GameService>();
+
+// Domain services
 builder.Services.AddScoped<GameLogicService>();
+
+// Infrastructure services
+builder.Services.AddSingleton<IGameRepository, InMemoryGameRepository>();
+builder.Services.AddScoped<IDomainEventPublisher, LoggingDomainEventPublisher>();
 
 var app = builder.Build();
 
