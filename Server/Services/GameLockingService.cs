@@ -39,7 +39,8 @@ public class GameLockingService
         lock (gameLock)
         {
             // Execute async action synchronously within the lock to maintain atomicity
-            action().GetAwaiter().GetResult();
+            // Using ConfigureAwait(false) to avoid potential deadlocks
+            action().ConfigureAwait(false).GetAwaiter().GetResult();
         }
     }
 
@@ -74,7 +75,8 @@ public class GameLockingService
         lock (gameLock)
         {
             // Execute async function synchronously within the lock to maintain atomicity
-            return func().GetAwaiter().GetResult();
+            // Using ConfigureAwait(false) to avoid potential deadlocks
+            return func().ConfigureAwait(false).GetAwaiter().GetResult();
         }
     }
 

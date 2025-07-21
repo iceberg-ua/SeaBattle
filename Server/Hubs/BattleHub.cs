@@ -6,7 +6,7 @@ using Microsoft.Extensions.Logging;
 
 namespace SeaBattle.Server.Hubs;
 
-class BattleHub(GlobalGameStorage storage, GameService gameService, GameLogicService gameLogicService, GameLockingService gameLockingService, ILogger<BattleHub> logger) : Hub<IGameHub>
+public class BattleHub(GlobalGameStorage storage, GameService gameService, GameLogicService gameLogicService, GameLockingService gameLockingService, ILogger<BattleHub> logger) : Hub<IGameHub>
 {
     private GlobalGameStorage GameStorage { get; } = storage;
     private GameService GameService { get; } = gameService;

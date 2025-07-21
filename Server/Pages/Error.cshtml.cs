@@ -22,5 +22,6 @@ public class ErrorModel : PageModel
     public void OnGet()
     {
         RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier;
+        _logger.LogWarning("Error page accessed with RequestId: {RequestId}", RequestId);
     }
 }
