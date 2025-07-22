@@ -6,12 +6,13 @@ using Microsoft.Extensions.Logging;
 
 namespace SeaBattle.Server.Hubs;
 
-public class BattleHub(GlobalGameStorage storage, GameService gameService, GameLogicService gameLogicService, GameLockingService gameLockingService, ILogger<BattleHub> logger) : Hub<IGameHub>
+public class BattleHub(GlobalGameStorage storage, GameService gameService, GameLogicService gameLogicService, GameLockingService gameLockingService, ConnectionTrackingService connectionTracking, ILogger<BattleHub> logger) : Hub<IGameHub>
 {
     private GlobalGameStorage GameStorage { get; } = storage;
     private GameService GameService { get; } = gameService;
     private GameLogicService GameLogicService { get; } = gameLogicService;
     private GameLockingService GameLockingService { get; } = gameLockingService;
+    private ConnectionTrackingService ConnectionTracking { get; } = connectionTracking;
     private ILogger<BattleHub> Logger { get; } = logger;
 
     private GameState? GetGameState(Guid playerId)
@@ -44,6 +45,9 @@ public class BattleHub(GlobalGameStorage storage, GameService gameService, GameL
             {
                 await Groups.AddToGroupAsync(Context.ConnectionId, gameState.Id.ToString());
                 await Groups.AddToGroupAsync(Context.ConnectionId, playerId.ToString());
+                
+                // Track the connection
+                ConnectionTracking.RegisterConnection(Context.ConnectionId, playerId, gameState.Id);
             }
 
             await Clients.Caller.JoinedGame(GameService.GetClientGameState(gameState, playerId, includeEnemyField: gameState?.InProgress ?? false));
@@ -327,5 +331,211 @@ public class BattleHub(GlobalGameStorage storage, GameService gameService, GameL
         // Send complete updated state
         var updatedState = GameService.CreateGameStateUpdate(gameState, playerId);
         await Clients.Group(playerId.ToString()).UpdateGameState(updatedState);
+    }
+
+    public async Task ReconnectToGame(Guid playerId)
+    {
+        try
+        {
+            var gameState = GetGameState(playerId);
+            if (gameState == null)
+            {
+                Logger.LogWarning("No active game found for reconnecting player {PlayerId}", playerId);
+                await Clients.Caller.Error("No active game found to reconnect to");
+                return;
+            }
+
+            if (!gameState.Players.ContainsKey(playerId))
+            {
+                Logger.LogWarning("Player {PlayerId} not found in game {GameId} during reconnect", playerId, gameState.Id);
+                await Clients.Caller.Error("Player not found in game");
+                return;
+            }
+
+            Logger.LogInformation("Player {PlayerId} reconnecting to game {GameId}", playerId, gameState.Id);
+
+            // Re-add to groups and update connection tracking
+            await Groups.AddToGroupAsync(Context.ConnectionId, gameState.Id.ToString());
+            await Groups.AddToGroupAsync(Context.ConnectionId, playerId.ToString());
+            ConnectionTracking.RegisterConnection(Context.ConnectionId, playerId, gameState.Id);
+
+            // Send current game state
+            var clientGameState = GameService.GetClientGameState(gameState, playerId, includeEnemyField: gameState.InProgress);
+            await Clients.Caller.JoinedGame(clientGameState);
+
+            Logger.LogInformation("Player {PlayerId} successfully reconnected to game {GameId}", playerId, gameState.Id);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error in ReconnectToGame for player {PlayerId}", playerId);
+            await Clients.Caller.Error("Failed to reconnect to game");
+        }
+    }
+
+    /// <summary>
+    /// Handles player disconnection, cleaning up connections and managing game state.
+    /// </summary>
+    public override async Task OnDisconnectedAsync(Exception? exception)
+    {
+        try
+        {
+            Logger.LogInformation("Connection {ConnectionId} disconnected", Context.ConnectionId);
+            
+            // Remove the connection and get player info
+            var connection = ConnectionTracking.RemoveConnection(Context.ConnectionId);
+            if (connection == null)
+            {
+                Logger.LogWarning("No connection info found for disconnected connection {ConnectionId}", Context.ConnectionId);
+                await base.OnDisconnectedAsync(exception);
+                return;
+            }
+
+            Logger.LogInformation("Player {PlayerId} disconnected from connection {ConnectionId}", connection.PlayerId, Context.ConnectionId);
+
+            // Check if player has other active connections
+            if (ConnectionTracking.IsPlayerConnected(connection.PlayerId))
+            {
+                Logger.LogInformation("Player {PlayerId} has other active connections, no further action needed", connection.PlayerId);
+                await base.OnDisconnectedAsync(exception);
+                return;
+            }
+
+            // Player is completely disconnected, handle game cleanup if in a game
+            if (connection.GameId.HasValue)
+            {
+                await HandlePlayerDisconnectedFromGame(connection.PlayerId, connection.GameId.Value);
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error handling disconnection for connection {ConnectionId}", Context.ConnectionId);
+        }
+
+        await base.OnDisconnectedAsync(exception);
+    }
+
+    /// <summary>
+    /// Handles player disconnection from an active game.
+    /// </summary>
+    private async Task HandlePlayerDisconnectedFromGame(Guid playerId, Guid gameId)
+    {
+        try
+        {
+            // Use game-level locking to prevent race conditions during disconnect processing
+            await GameLockingService.ExecuteWithGameLockAsync(gameId, () => ProcessPlayerDisconnectAtomically(playerId, gameId));
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error handling player disconnect for player {PlayerId} in game {GameId}", playerId, gameId);
+        }
+    }
+
+    /// <summary>
+    /// Processes player disconnect atomically within a game lock.
+    /// </summary>
+    private async Task ProcessPlayerDisconnectAtomically(Guid playerId, Guid gameId)
+    {
+        var gameState = GameStorage.GetGameById(gameId);
+        if (gameState == null)
+        {
+            Logger.LogWarning("Game {GameId} not found during disconnect processing for player {PlayerId}", gameId, playerId);
+            return;
+        }
+
+        if (!gameState.Players.ContainsKey(playerId))
+        {
+            Logger.LogWarning("Player {PlayerId} not found in game {GameId} during disconnect processing", playerId, gameId);
+            return;
+        }
+
+        Logger.LogInformation("Processing disconnect for player {PlayerId} in game {GameId}, InProgress: {InProgress}", 
+            playerId, gameId, gameState.InProgress);
+
+        if (gameState.InProgress)
+        {
+            // Game is active - forfeit the disconnected player
+            await HandleGameForfeit(gameState, playerId);
+        }
+        else
+        {
+            // Game is in setup phase - remove player and clean up if needed
+            await HandleSetupPhaseDisconnect(gameState, playerId);
+        }
+    }
+
+    /// <summary>
+    /// Handles forfeit when a player disconnects during an active game.
+    /// </summary>
+    private async Task HandleGameForfeit(GameState gameState, Guid disconnectedPlayerId)
+    {
+        try
+        {
+            // Find the opponent
+            var opponentId = gameState.Players.Keys.FirstOrDefault(id => id != disconnectedPlayerId);
+            if (opponentId == Guid.Empty)
+            {
+                Logger.LogWarning("No opponent found for disconnected player {PlayerId} in game {GameId}", disconnectedPlayerId, gameState.Id);
+                // Clean up single-player game
+                GameStorage.RemoveGame(gameState.Id);
+                GameLockingService.CleanupGameLock(gameState.Id);
+                return;
+            }
+
+            Logger.LogInformation("Player {PlayerId} forfeited due to disconnect, opponent {OpponentId} wins", disconnectedPlayerId, opponentId);
+
+            // Handle game over with forfeit
+            await HandleGameOver(gameState, opponentId, disconnectedPlayerId);
+
+            // Send forfeit notification to opponent if connected
+            if (ConnectionTracking.IsPlayerConnected(opponentId))
+            {
+                await Clients.Group(opponentId.ToString()).PlayerDisconnected(disconnectedPlayerId);
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error handling forfeit for player {PlayerId} in game {GameId}", disconnectedPlayerId, gameState.Id);
+        }
+    }
+
+    /// <summary>
+    /// Handles disconnect during setup phase.
+    /// </summary>
+    private async Task HandleSetupPhaseDisconnect(GameState gameState, Guid disconnectedPlayerId)
+    {
+        try
+        {
+            // Remove the disconnected player
+            gameState.Players.Remove(disconnectedPlayerId);
+
+            if (gameState.Players.Count == 0)
+            {
+                // No players left - remove the game
+                Logger.LogInformation("Removing empty game {GameId} after all players disconnected", gameState.Id);
+                GameStorage.RemoveGame(gameState.Id);
+                GameLockingService.CleanupGameLock(gameState.Id);
+            }
+            else
+            {
+                // Notify remaining players
+                var remainingPlayers = gameState.Players.Keys.ToList();
+                foreach (var playerId in remainingPlayers)
+                {
+                    if (ConnectionTracking.IsPlayerConnected(playerId))
+                    {
+                        var updatedState = GameService.CreateGameStateUpdate(gameState, playerId);
+                        await Clients.Group(playerId.ToString()).UpdateGameState(updatedState);
+                        await Clients.Group(playerId.ToString()).PlayerDisconnected(disconnectedPlayerId);
+                    }
+                }
+
+                Logger.LogInformation("Player {PlayerId} removed from game {GameId}, {RemainingCount} players remaining", 
+                    disconnectedPlayerId, gameState.Id, gameState.Players.Count);
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error handling setup phase disconnect for player {PlayerId} in game {GameId}", disconnectedPlayerId, gameState.Id);
+        }
     }
 }

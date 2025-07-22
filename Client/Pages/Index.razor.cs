@@ -26,6 +26,7 @@ public partial class Index
         BattleHub.On(nameof(IGameHub.GameStarted), OnGameStarted);
         BattleHub.On<bool>(nameof(IGameHub.GameOver), OnGameOver);
         BattleHub.On<string>(nameof(IGameHub.Error), OnError);
+        BattleHub.On<Guid>(nameof(IGameHub.PlayerDisconnected), OnPlayerDisconnected);
 
         return base.OnInitializedAsync();
     }
@@ -93,6 +94,18 @@ public partial class Index
         // For now, log to console. In production, you might want to show a toast notification
         // or update the UI to display the error message
         Console.WriteLine($"Game Error: {message}");
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task OnPlayerDisconnected(Guid disconnectedPlayerId)
+    {
+        Console.WriteLine($"Player {disconnectedPlayerId} disconnected during the game");
+        
+        // Show a notification to the user that their opponent disconnected
+        _gameOverString = "Opponent disconnected! You win by forfeit.";
+        _gameOverClass = "win";
+        _gameIsOver = true;
+        
         await InvokeAsync(StateHasChanged);
     }
 

@@ -40,6 +40,13 @@ public interface IGameHub
     /// <returns>A task representing the asynchronous operation</returns>
     Task PlayerReady(Guid playerId);
 
+    /// <summary>
+    /// Allows a player to reconnect and rejoin their existing game.
+    /// </summary>
+    /// <param name="playerId">Unique identifier for the player attempting to reconnect</param>
+    /// <returns>A task representing the asynchronous operation</returns>
+    Task ReconnectToGame(Guid playerId);
+
     #endregion
 
     #region Server response (handled on client)
@@ -78,6 +85,13 @@ public interface IGameHub
     /// <param name="message">Error message to display to the user</param>
     /// <returns>A task representing the asynchronous operation</returns>
     Task Error(string message);
+
+    /// <summary>
+    /// Notifies the client that another player has disconnected.
+    /// </summary>
+    /// <param name="playerId">ID of the player who disconnected</param>
+    /// <returns>A task representing the asynchronous operation</returns>
+    Task PlayerDisconnected(Guid playerId);
 
     #endregion
 }

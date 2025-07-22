@@ -13,6 +13,11 @@ public class GlobalGameStorage
         return _gamesStorage.Values.FirstOrDefault(g => g.Players.ContainsKey(playerId));
     }
 
+    public GameState? GetGameById(Guid gameId)
+    {
+        return _gamesStorage.TryGetValue(gameId, out var game) ? game : null;
+    }
+
     public GameState CreateGame()
     {
         lock (_vacantGameLock)
