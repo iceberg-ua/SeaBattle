@@ -49,7 +49,8 @@ public class GameService
             Player = player!.GetPlayerInfo(),
             OpponentsName = opponentInfo?.Name,
             FieldSize = game.Size,
-            Stage = game.Stage
+            Stage = game.Stage,
+            FleetComplete = player.Fleet.Complete
         };
 
         gameState.InitializeFields();

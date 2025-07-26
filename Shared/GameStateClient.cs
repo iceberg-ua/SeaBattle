@@ -8,6 +8,7 @@ public class GameStateClient
     public string? OpponentsName { get; set; }
     public int FieldSize { get; set; }
     public GameStageEnum Stage { get; set; } = GameStageEnum.Setup;
+    public bool FleetComplete { get; set; }
 
     public CellState[] OwnField { get; set; }
     public CellState[] EnemyField { get; set; }

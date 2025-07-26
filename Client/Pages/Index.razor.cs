@@ -33,7 +33,8 @@ public partial class Index
 
     // Computed properties based on GameState
     private bool ClearButtonDisable => GameState?.OwnField.All(c => c == CellState.empty) ?? true;
-    private bool FleetComplete => GameState?.Player.State != PlayerStateEnum.Formation && GameState?.OwnField.Any(c => c == CellState.ship) == true;
+    private bool FleetComplete => GameState?.Player.State == PlayerStateEnum.Formation && 
+                                  GameState?.FleetComplete == true;
     private bool IsStarted => GameState?.Stage == GameStageEnum.Game;
     private bool IsReady => GameState?.Player.State == PlayerStateEnum.Ready;
 
