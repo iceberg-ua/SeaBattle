@@ -31,8 +31,6 @@ public partial class MainLayout
 
         //subscribe to server event when game is created/found and player is joined to it
         BattleHub.On<GameStateClient>(nameof(IGameHub.JoinedGame), OnJoinedGame);
-        BattleHub.On<string>(nameof(IGameHub.Error), OnError);
-        BattleHub.On<Guid>(nameof(IGameHub.PlayerDisconnected), OnPlayerDisconnected);
 
         await BattleHub.StartAsync();
         await TryGetPlayerState();
@@ -74,27 +72,6 @@ public partial class MainLayout
         InvokeAsync(StateHasChanged);
     }
 
-    private async Task OnError(string message)
-    {
-        // Log error and potentially redirect to sign-in for critical errors
-        Console.WriteLine($"Hub Error: {message}");
-        
-        // If it's a critical connection error, redirect to sign-in
-        if (message.Contains("Invalid player ID") || message.Contains("Game not found"))
-        {
-            Navigation.NavigateTo("/sign-in");
-        }
-        
-        await InvokeAsync(StateHasChanged);
-    }
-
-    private async Task OnPlayerDisconnected(Guid disconnectedPlayerId)
-    {
-        Console.WriteLine($"Player {disconnectedPlayerId} disconnected from the game");
-        
-        // Update UI to show disconnection notification
-        await InvokeAsync(StateHasChanged);
-    }
 
     private async Task OnConnectionClosed(Exception? exception)
     {

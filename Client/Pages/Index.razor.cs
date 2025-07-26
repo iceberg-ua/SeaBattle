@@ -12,6 +12,9 @@ public partial class Index
     [CascadingParameter]
     public HubConnection BattleHub { get; set; } = null!;
 
+    [Inject]
+    public NavigationManager Navigation { get; set; } = null!;
+
     private GameStateClient? GameState => GameStateService.GameState;
     public PlayerInfo Player => GameState?.Player!;
 
@@ -95,6 +98,13 @@ public partial class Index
         // For now, log to console. In production, you might want to show a toast notification
         // or update the UI to display the error message
         Console.WriteLine($"Game Error: {message}");
+        
+        // If it's a critical connection error, redirect to sign-in
+        if (message.Contains("Invalid player ID") || message.Contains("Game not found"))
+        {
+            Navigation.NavigateTo("/sign-in");
+        }
+        
         await InvokeAsync(StateHasChanged);
     }
 
