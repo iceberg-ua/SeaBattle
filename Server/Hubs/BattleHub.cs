@@ -340,15 +340,17 @@ public class BattleHub(GlobalGameStorage storage, GameService gameService, GameL
             var gameState = GetGameState(playerId);
             if (gameState == null)
             {
-                Logger.LogWarning("No active game found for reconnecting player {PlayerId}", playerId);
-                await Clients.Caller.Error("No active game found to reconnect to");
+                Logger.LogInformation("No active game found for player {PlayerId}, creating new game", playerId);
+                // No existing game found, create a new one
+                await JoinGame(playerId, "");
                 return;
             }
 
             if (!gameState.Players.ContainsKey(playerId))
             {
-                Logger.LogWarning("Player {PlayerId} not found in game {GameId} during reconnect", playerId, gameState.Id);
-                await Clients.Caller.Error("Player not found in game");
+                Logger.LogInformation("Player {PlayerId} not found in game {GameId}, creating new game", playerId, gameState.Id);
+                // Player not in the found game, create a new one
+                await JoinGame(playerId, "");
                 return;
             }
 
