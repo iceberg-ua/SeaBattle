@@ -361,6 +361,13 @@ public class BattleHub(GlobalGameStorage storage, GameService gameService, GameL
             await Groups.AddToGroupAsync(Context.ConnectionId, playerId.ToString());
             ConnectionTracking.RegisterConnection(Context.ConnectionId, playerId, gameState.Id);
 
+            // Clear any pending disconnection since player successfully reconnected
+            if (ConnectionTracking.HasPendingDisconnection(playerId))
+            {
+                ConnectionTracking.RemovePendingDisconnection(playerId);
+                Logger.LogInformation("Player {PlayerId} reconnected within grace period, cancelling pending disconnection", playerId);
+            }
+
             // Send current game state
             var clientGameState = GameService.GetClientGameState(gameState, playerId, includeEnemyField: gameState.InProgress);
             await Clients.Caller.JoinedGame(clientGameState);
@@ -455,8 +462,9 @@ public class BattleHub(GlobalGameStorage storage, GameService gameService, GameL
 
         if (gameState.InProgress)
         {
-            // Game is active - forfeit the disconnected player
-            await HandleGameForfeit(gameState, playerId);
+            // Game is active - add to pending disconnections for grace period
+            Logger.LogInformation("Player {PlayerId} disconnected from active game {GameId}, starting grace period for reconnection", playerId, gameId);
+            ConnectionTracking.AddPendingDisconnection(playerId, gameId);
         }
         else
         {

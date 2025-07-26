@@ -10,12 +10,18 @@ public class ConnectionTrackingService
 {
     private readonly ConcurrentDictionary<string, PlayerConnection> _connections = new();
     private readonly ConcurrentDictionary<Guid, HashSet<string>> _playerConnections = new();
+    private readonly ConcurrentDictionary<Guid, PlayerDisconnection> _pendingDisconnections = new();
     private readonly Lock _playerConnectionsLock = new();
 
     /// <summary>
     /// Information about a player's connection.
     /// </summary>
     public record PlayerConnection(Guid PlayerId, Guid? GameId, DateTime ConnectedAt);
+
+    /// <summary>
+    /// Information about a player's disconnection with grace period.
+    /// </summary>
+    public record PlayerDisconnection(Guid PlayerId, Guid GameId, DateTime DisconnectedAt);
 
     /// <summary>
     /// Registers a new connection for a player.
@@ -37,6 +43,9 @@ public class ConnectionTrackingService
             }
             connections.Add(connectionId);
         }
+
+        // Clear any pending disconnection since player reconnected
+        _pendingDisconnections.TryRemove(playerId, out _);
     }
 
     /// <summary>
@@ -148,6 +157,50 @@ public class ConnectionTrackingService
                     : 0.0
             );
         }
+    }
+
+    /// <summary>
+    /// Adds a player to pending disconnections for grace period handling.
+    /// </summary>
+    /// <param name="playerId">The player ID</param>
+    /// <param name="gameId">The game ID</param>
+    public void AddPendingDisconnection(Guid playerId, Guid gameId)
+    {
+        var disconnection = new PlayerDisconnection(playerId, gameId, DateTime.UtcNow);
+        _pendingDisconnections.TryAdd(playerId, disconnection);
+    }
+
+    /// <summary>
+    /// Gets all pending disconnections that have exceeded the grace period.
+    /// </summary>
+    /// <param name="gracePeriodMinutes">Grace period in minutes</param>
+    /// <returns>List of expired disconnections</returns>
+    public List<PlayerDisconnection> GetExpiredDisconnections(double gracePeriodMinutes = 2.0)
+    {
+        var cutoffTime = DateTime.UtcNow.AddMinutes(-gracePeriodMinutes);
+        return _pendingDisconnections.Values
+            .Where(d => d.DisconnectedAt < cutoffTime)
+            .ToList();
+    }
+
+    /// <summary>
+    /// Removes a pending disconnection.
+    /// </summary>
+    /// <param name="playerId">The player ID</param>
+    /// <returns>True if the disconnection was removed</returns>
+    public bool RemovePendingDisconnection(Guid playerId)
+    {
+        return _pendingDisconnections.TryRemove(playerId, out _);
+    }
+
+    /// <summary>
+    /// Checks if a player has a pending disconnection.
+    /// </summary>
+    /// <param name="playerId">The player ID</param>
+    /// <returns>True if player has pending disconnection</returns>
+    public bool HasPendingDisconnection(Guid playerId)
+    {
+        return _pendingDisconnections.ContainsKey(playerId);
     }
 
     /// <summary>
