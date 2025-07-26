@@ -33,12 +33,14 @@ public class BattleHub(GlobalGameStorage storage, GameService gameService, GameL
         try
         {
             var gameState = GameStorage.GetGameByPlayerId(playerId);
+            bool isNewPlayer = false;
 
             if (gameState == null && !string.IsNullOrEmpty(playerName))
             {
                 gameState = GameStorage.CreateGame();
                 var playerState = GameService.AddPlayer(gameState, playerName);
                 playerId = playerState.PlayerId;
+                isNewPlayer = true;
             }
 
             if (gameState is not null)
@@ -48,6 +50,17 @@ public class BattleHub(GlobalGameStorage storage, GameService gameService, GameL
                 
                 // Track the connection
                 ConnectionTracking.RegisterConnection(Context.ConnectionId, playerId, gameState.Id);
+                
+                // If this is a new player joining an existing game, update all players
+                if (isNewPlayer && gameState.Players.Count > 1)
+                {
+                    // Send updated states to all players in the game so they see each other's names
+                    foreach (var existingPlayerId in gameState.Players.Keys)
+                    {
+                        var updatedState = GameService.CreateGameStateUpdate(gameState, existingPlayerId);
+                        await Clients.Group(existingPlayerId.ToString()).UpdateGameState(updatedState);
+                    }
+                }
             }
 
             await Clients.Caller.JoinedGame(GameService.GetClientGameState(gameState, playerId, includeEnemyField: gameState?.InProgress ?? false));
