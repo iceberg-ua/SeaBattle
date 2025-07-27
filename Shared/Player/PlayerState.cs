@@ -49,7 +49,16 @@ public class PlayerState
     
     public PlayerInfo GetPlayerInfo()
     {
-        var fieldState = Fleet.Ships.SelectMany(ship => ship).ToDictionary(deck => deck.X * FieldSize + deck.Y, deck => deck.State);
+        var fieldState = new Dictionary<int, CellState>();
+        
+        // Include all non-empty cells from the actual field (including hits, misses, and remaining ships)
+        for (int i = 0; i < Field.Length; i++)
+        {
+            if (Field[i] != CellState.empty)
+            {
+                fieldState[i] = Field[i];
+            }
+        }
 
         return new(PlayerId, Name, State, fieldState);
     }
