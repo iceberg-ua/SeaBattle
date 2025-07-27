@@ -105,6 +105,13 @@
     background-color: #455A64;
 }
 
+/* Invalid placement visual feedback */
+.sea-cell.invalid-placement {
+    background-color: #ffcccc;
+    border-color: #ff6666;
+    animation: shake 0.5s ease-in-out;
+}
+
 /* Add fade-in animation for hit and miss markers */
 @keyframes fadeIn {
     from {
@@ -112,5 +119,18 @@
     }
     to {
         opacity: 1;
+    }
+}
+
+/* Shake animation for invalid placements */
+@keyframes shake {
+    0%, 100% { 
+        transform: translateX(0); 
+    }
+    25% { 
+        transform: translateX(-3px); 
+    }
+    75% { 
+        transform: translateX(3px); 
     }
 }

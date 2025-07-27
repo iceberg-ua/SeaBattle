@@ -9,16 +9,30 @@
             
             <HeaderComponent></HeaderComponent>
             
-            <GameBoard Field=GameState.OwnField 
-                       EnemyField=GameState.EnemyField
-                       CellClicked=FieldCellClicked></GameBoard>
-
             @if (!IsStarted && !IsReady)
             {
+                <div class="game-setup-layout">
+                    <div class="game-board-container">
+                        <GameBoard Field=GameState.OwnField 
+                                   EnemyField=GameState.EnemyField
+                                   CellClicked=FieldCellClicked></GameBoard>
+                    </div>
+                    
+                    <div class="game-sidebar">
+                        <ShipCountIndicator></ShipCountIndicator>
+                    </div>
+                </div>
+                
                 <div class="button-container">
                     <button class="btn btn-danger" disabled="@ClearButtonDisable" @onclick=ClearButtonClicked>Clear</button>
                     <button class="btn btn-success" disabled="@(!FleetComplete)" @onclick=OnReadyButtonClick>Ready</button>
                 </div>
+            }
+            else
+            {
+                <GameBoard Field=GameState.OwnField 
+                           EnemyField=GameState.EnemyField
+                           CellClicked=FieldCellClicked></GameBoard>
             }
         </div>
     </div>

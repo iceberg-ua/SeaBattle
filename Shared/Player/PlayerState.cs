@@ -60,7 +60,7 @@ public class PlayerState
             }
         }
 
-        return new(PlayerId, Name, State, fieldState);
+        return new(PlayerId, Name, State, fieldState, Fleet.GetShipCounts());
     }
 
     public void SetReady()

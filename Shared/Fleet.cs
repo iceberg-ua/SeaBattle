@@ -37,7 +37,12 @@ public class Fleet
 
         if (count > 1)
         {
-            if (existingShips.Sum(s => s.Size) + 1 > _maxShipSize)
+            var newShipSize = existingShips.Sum(s => s.Size) + 1;
+            if (newShipSize > _maxShipSize)
+                return false;
+
+            // Check if we can convert these ships to a new size
+            if (!CanConvertToShipOfSize(newShipSize, existingShips))
                 return false;
 
             Ships.RemoveAll(existingShips.Contains);
@@ -58,10 +63,21 @@ public class Fleet
             if (ship.Size == _maxShipSize)
                 return false;
 
+            var newShipSize = ship.Size + 1;
+            // Check if we can convert this ship to a new size
+            if (!CanConvertToShipOfSize(newShipSize, [ship]))
+                return false;
+
             ship.AddDeck(new(x, y, CellState.ship));
         }
         else
+        {
+            // Adding a new single-deck ship
+            if (!CanAddShipOfSize(1))
+                return false;
+
             Ships.Add([new(x, y, CellState.ship)]);
+        }
 
         Complete = CheckCompletion();
 
@@ -96,5 +112,76 @@ public class Fleet
     {
         Ships.Clear();
         Complete = false;
+    }
+
+    /// <summary>
+    /// Gets the current count of ships by size
+    /// </summary>
+    public Dictionary<int, int> GetShipCounts()
+    {
+        var counts = new Dictionary<int, int>
+        {
+            [1] = 0,
+            [2] = 0,
+            [3] = 0,
+            [4] = 0
+        };
+
+        foreach (var ship in Ships)
+        {
+            if (counts.ContainsKey(ship.Size))
+                counts[ship.Size]++;
+        }
+
+        return counts;
+    }
+
+    /// <summary>
+    /// Gets the maximum allowed ships by size
+    /// </summary>
+    public static Dictionary<int, int> GetMaxShipCounts()
+    {
+        return new Dictionary<int, int>
+        {
+            [1] = 4, // 4 single-deck ships
+            [2] = 3, // 3 two-deck ships  
+            [3] = 2, // 2 three-deck ships
+            [4] = 1  // 1 four-deck ship
+        };
+    }
+
+    /// <summary>
+    /// Checks if we can add a ship of the specified size without exceeding limits
+    /// </summary>
+    private bool CanAddShipOfSize(int size)
+    {
+        var currentCounts = GetShipCounts();
+        var maxCounts = GetMaxShipCounts();
+
+        if (!maxCounts.ContainsKey(size))
+            return false;
+
+        return currentCounts[size] < maxCounts[size];
+    }
+
+    /// <summary>
+    /// Checks if we can convert ships to a new size (accounts for removing existing ships)
+    /// </summary>
+    private bool CanConvertToShipOfSize(int newSize, List<Ship> shipsToRemove)
+    {
+        var currentCounts = GetShipCounts();
+        var maxCounts = GetMaxShipCounts();
+
+        if (!maxCounts.ContainsKey(newSize))
+            return false;
+
+        // Account for ships that will be removed in the conversion
+        foreach (var ship in shipsToRemove)
+        {
+            if (currentCounts.ContainsKey(ship.Size))
+                currentCounts[ship.Size]--;
+        }
+
+        return currentCounts[newSize] < maxCounts[newSize];
     }
 }

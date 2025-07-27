@@ -1,0 +1,81 @@
+@using SeaBattle.Shared
+@implements IDisposable
+
+@if (GameState?.Stage == GameStageEnum.Setup)
+{
+    <div class="ship-counts-container">
+        <h4>Fleet Status</h4>
+        <div class="ship-counts">
+            @foreach (var kvp in MaxShipCounts.OrderByDescending(x => x.Key))
+            {
+                var size = kvp.Key;
+                var maxCount = kvp.Value;
+                var currentCount = CurrentShipCounts.GetValueOrDefault(size, 0);
+                var isComplete = currentCount == maxCount;
+                var isOverLimit = currentCount > maxCount;
+                
+                <div class="ship-count-item @(isComplete ? "complete" : "") @(isOverLimit ? "over-limit" : "")">
+                    <div class="ship-visual">
+                        @for (int i = 0; i < size; i++)
+                        {
+                            <div class="ship-deck"></div>
+                        }
+                    </div>
+                    <div class="ship-count-text">
+                        <span class="count">@currentCount/@maxCount</span>
+                        <span class="size-label">@GetSizeLabel(size)</span>
+                    </div>
+                    @if (isComplete)
+                    {
+                        <div class="status-icon complete-icon">✓</div>
+                    }
+                    else if (isOverLimit)
+                    {
+                        <div class="status-icon error-icon">!</div>
+                    }
+                </div>
+            }
+        </div>
+        @if (FleetComplete)
+        {
+            <div class="fleet-complete-message">
+                <span class="complete-icon">✓</span> Fleet Complete!
+            </div>
+        }
+    </div>
+}
+
+@code {
+    private GameStateClient? GameState => GameStateService.GameState;
+    private bool FleetComplete => GameState?.FleetComplete ?? false;
+    
+    private Dictionary<int, int> CurrentShipCounts => GameState?.Player?.FleetCounts ?? new();
+    private Dictionary<int, int> MaxShipCounts => Fleet.GetMaxShipCounts();
+    
+    protected override void OnInitialized()
+    {
+        GameStateService.StateChanged += OnStateChanged;
+    }
+    
+    private void OnStateChanged(GameStateClient? newState)
+    {
+        InvokeAsync(StateHasChanged);
+    }
+    
+    private string GetSizeLabel(int size)
+    {
+        return size switch
+        {
+            1 => "Patrol Boat",
+            2 => "Destroyer", 
+            3 => "Cruiser",
+            4 => "Battleship",
+            _ => $"{size}-deck"
+        };
+    }
+    
+    public void Dispose()
+    {
+        GameStateService.StateChanged -= OnStateChanged;
+    }
+}
