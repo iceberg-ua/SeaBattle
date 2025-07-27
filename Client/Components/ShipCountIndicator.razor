@@ -4,35 +4,35 @@
 @if (GameState?.Stage == GameStageEnum.Setup)
 {
     <div class="ship-counts-container">
-        <h4>Fleet Status</h4>
         <div class="ship-counts">
             @foreach (var kvp in MaxShipCounts.OrderByDescending(x => x.Key))
             {
                 var size = kvp.Key;
                 var maxCount = kvp.Value;
                 var currentCount = CurrentShipCounts.GetValueOrDefault(size, 0);
-                var isComplete = currentCount == maxCount;
-                var isOverLimit = currentCount > maxCount;
                 
-                <div class="ship-count-item @(isComplete ? "complete" : "") @(isOverLimit ? "over-limit" : "")">
-                    <div class="ship-visual">
-                        @for (int i = 0; i < size; i++)
+                <div class="ship-type-group">
+                    <div class="ship-type-header">
+                        <div class="ship-type-label">@GetSizeLabel(size)</div>
+                        @if (currentCount > maxCount)
                         {
-                            <div class="ship-deck"></div>
+                            <div class="excess-indicator">!</div>
                         }
                     </div>
-                    <div class="ship-count-text">
-                        <span class="count">@currentCount/@maxCount</span>
-                        <span class="size-label">@GetSizeLabel(size)</span>
+                    <div class="ship-symbols">
+                        @for (int i = 0; i < maxCount; i++)
+                        {
+                            var isPlaced = i < currentCount;
+                            var cssClass = isPlaced ? "placed" : "missing";
+                            
+                            <div class="ship-symbol @cssClass">
+                                @for (int j = 0; j < size; j++)
+                                {
+                                    <div class="ship-deck"></div>
+                                }
+                            </div>
+                        }
                     </div>
-                    @if (isComplete)
-                    {
-                        <div class="status-icon complete-icon">✓</div>
-                    }
-                    else if (isOverLimit)
-                    {
-                        <div class="status-icon error-icon">!</div>
-                    }
                 </div>
             }
         </div>

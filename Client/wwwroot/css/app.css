@@ -104,7 +104,7 @@ a, .btn-link {
 .game-setup-layout {
     display: flex;
     justify-content: center;
-    align-items: flex-start;
+    align-items: center;
     gap: 30px;
     margin: 20px 0;
 }
@@ -116,9 +116,10 @@ a, .btn-link {
 
 .game-sidebar {
     flex: 0 0 auto;
-    min-width: 200px;
     max-width: 240px;
     order: 2;
+    display: flex;
+    align-items: flex-start;
 }
 
 /* Responsive layout for mobile */
