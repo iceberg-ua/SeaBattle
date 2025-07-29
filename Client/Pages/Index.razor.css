@@ -1,0 +1,63 @@
+.button-container {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    margin-top: 15px;
+    margin-bottom: 10px;
+}
+
+.button-container .btn {
+    padding: 6px 16px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    border-radius: 4px;
+    min-width: 80px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    border-width: 1px;
+}
+
+.button-container .btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.button-container .btn-danger {
+    background-color: #dc3545;
+    border-color: #dc3545;
+    color: white;
+}
+
+.button-container .btn-danger:hover:not(:disabled) {
+    background-color: #c82333;
+    border-color: #bd2130;
+}
+
+.button-container .btn-success {
+    background-color: #28a745;
+    border-color: #28a745;
+    color: white;
+}
+
+.button-container .btn-success:hover:not(:disabled) {
+    background-color: #218838;
+    border-color: #1e7e34;
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+    .button-container {
+        gap: 10px;
+        margin-top: 12px;
+    }
+    
+    .button-container .btn {
+        padding: 5px 12px;
+        font-size: 0.8rem;
+        min-width: 70px;
+        height: 32px;
+    }
+}
