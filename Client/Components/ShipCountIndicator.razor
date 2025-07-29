@@ -3,7 +3,7 @@
 
 @if (GameState?.Stage == GameStageEnum.Setup)
 {
-    <div class="ship-counts-container">
+    <div class="ship-counts-container @(FleetComplete ? "fleet-complete" : "")">
         <div class="ship-counts">
             @foreach (var kvp in MaxShipCounts.OrderByDescending(x => x.Key))
             {
@@ -36,12 +36,6 @@
                 </div>
             }
         </div>
-        @if (FleetComplete)
-        {
-            <div class="fleet-complete-message">
-                <span class="complete-icon">✓</span> Fleet Complete!
-            </div>
-        }
     </div>
 }
 
