@@ -46,10 +46,10 @@
                     </button>
                 </div>
                 
-                @if (IsReady && !IsStarted)
+                @if ((IsReady || _isReadyLoading) && !IsStarted)
                 {
                     <div class="waiting-indicator">
-                        <LoadingSpinner Show="true" Size="LoadingSpinner.SpinnerSize.Medium" Text="Waiting for opponent..." />
+                        <LoadingSpinner Show="true" Size="LoadingSpinner.SpinnerSize.Medium" Text="@GetWaitingText()" />
                     </div>
                 }
             }

@@ -115,8 +115,11 @@ public partial class Index
         // Update the game state through the service
         GameStateService.UpdateGameState(updatedState);
         
-        // Clear loading states when we get server response
-        _isReadyLoading = false;
+        // Clear ready loading state only when player actually becomes ready or game starts
+        if (_isReadyLoading && (updatedState.Player.State == PlayerStateEnum.Ready || updatedState.Stage == GameStageEnum.Game))
+        {
+            _isReadyLoading = false;
+        }
         
         await InvokeAsync(StateHasChanged);
     }
@@ -165,5 +168,19 @@ public partial class Index
         await InvokeAsync(StateHasChanged);
     }
 
+    #endregion
+    
+    #region Helper Methods
+    
+    private string GetWaitingText()
+    {
+        if (_isReadyLoading)
+            return "Getting ready...";
+        else if (IsReady)
+            return "Waiting for opponent...";
+        else
+            return "Waiting...";
+    }
+    
     #endregion
 }
