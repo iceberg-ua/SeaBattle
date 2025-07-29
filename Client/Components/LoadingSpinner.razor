@@ -1,0 +1,24 @@
+@if (Show)
+{
+    <div class="loading-spinner @Size.ToString().ToLower() @(Inline ? "inline" : "")">
+        <div class="spinner"></div>
+        @if (!string.IsNullOrEmpty(Text))
+        {
+            <span class="loading-text">@Text</span>
+        }
+    </div>
+}
+
+@code {
+    [Parameter] public bool Show { get; set; } = true;
+    [Parameter] public string Text { get; set; } = "";
+    [Parameter] public SpinnerSize Size { get; set; } = SpinnerSize.Medium;
+    [Parameter] public bool Inline { get; set; } = false;
+
+    public enum SpinnerSize
+    {
+        Small,
+        Medium,
+        Large
+    }
+}

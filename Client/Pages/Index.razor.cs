@@ -21,6 +21,11 @@ public partial class Index
     public bool _gameIsOver = false;
     public string _gameOverString = string.Empty;
     public string _gameOverClass = string.Empty;
+    
+    // Loading states
+    private bool _isReadyLoading = false;
+    private bool _isClearLoading = false;
+    private bool _isCellClickLoading = false;
 
     protected override Task OnInitializedAsync()
     {
@@ -45,19 +50,56 @@ public partial class Index
 
     private async void FieldCellClicked((int x, int y) cell)
     {
-        await BattleHub?.SendAsync(nameof(IGameHub.CellClicked), Player.Id, cell.x, cell.y)!;
+        if (_isCellClickLoading) return;
+        
+        _isCellClickLoading = true;
+        StateHasChanged();
+        
+        try
+        {
+            await BattleHub?.SendAsync(nameof(IGameHub.CellClicked), Player.Id, cell.x, cell.y)!;
+        }
+        finally
+        {
+            _isCellClickLoading = false;
+            StateHasChanged();
+        }
     }
 
     private async void ClearButtonClicked(MouseEventArgs e)
     {
-        if (!ClearButtonDisable)
+        if (ClearButtonDisable || _isClearLoading) return;
+        
+        _isClearLoading = true;
+        StateHasChanged();
+        
+        try
+        {
             await BattleHub?.SendAsync(nameof(IGameHub.ClearField), Player.Id)!;
+        }
+        finally
+        {
+            _isClearLoading = false;
+            StateHasChanged();
+        }
     }
 
     private async Task OnReadyButtonClick()
     {
-        if (FleetComplete)
+        if (!FleetComplete || _isReadyLoading) return;
+        
+        _isReadyLoading = true;
+        StateHasChanged();
+        
+        try
+        {
             await BattleHub?.SendAsync(nameof(IGameHub.PlayerReady), Player.Id)!;
+        }
+        finally
+        {
+            // Keep loading state until we get confirmation from server
+            // Will be cleared in OnUpdateGameState when player state changes
+        }
     }
 
     #endregion
@@ -72,6 +114,9 @@ public partial class Index
     {
         // Update the game state through the service
         GameStateService.UpdateGameState(updatedState);
+        
+        // Clear loading states when we get server response
+        _isReadyLoading = false;
         
         await InvokeAsync(StateHasChanged);
     }

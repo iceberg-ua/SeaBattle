@@ -24,15 +24,49 @@
                 </div>
                 
                 <div class="button-container">
-                    <button class="btn btn-danger" disabled="@ClearButtonDisable" @onclick=ClearButtonClicked>Clear</button>
-                    <button class="btn btn-success" disabled="@(!FleetComplete)" @onclick=OnReadyButtonClick>Ready</button>
+                    <button class="btn btn-danger" disabled="@(ClearButtonDisable || _isClearLoading)" @onclick=ClearButtonClicked>
+                        @if (_isClearLoading)
+                        {
+                            <LoadingSpinner Show="true" Size="LoadingSpinner.SpinnerSize.Small" Inline="true" />
+                        }
+                        else
+                        {
+                            <span>Clear</span>
+                        }
+                    </button>
+                    <button class="btn btn-success" disabled="@(!FleetComplete || _isReadyLoading)" @onclick=OnReadyButtonClick>
+                        @if (_isReadyLoading)
+                        {
+                            <LoadingSpinner Show="true" Size="LoadingSpinner.SpinnerSize.Small" Inline="true" />
+                        }
+                        else
+                        {
+                            <span>Ready</span>
+                        }
+                    </button>
                 </div>
+                
+                @if (IsReady && !IsStarted)
+                {
+                    <div class="waiting-indicator">
+                        <LoadingSpinner Show="true" Size="LoadingSpinner.SpinnerSize.Medium" Text="Waiting for opponent..." />
+                    </div>
+                }
             }
             else
             {
-                <GameBoard Field=GameState.OwnField 
-                           EnemyField=GameState.EnemyField
-                           CellClicked=FieldCellClicked></GameBoard>
+                <div class="game-board-wrapper">
+                    @if (_isCellClickLoading)
+                    {
+                        <div class="game-loading-overlay">
+                            <LoadingSpinner Show="true" Size="LoadingSpinner.SpinnerSize.Medium" Text="Processing..." />
+                        </div>
+                    }
+                    
+                    <GameBoard Field=GameState.OwnField 
+                               EnemyField=GameState.EnemyField
+                               CellClicked=FieldCellClicked></GameBoard>
+                </div>
             }
         </div>
     </div>
