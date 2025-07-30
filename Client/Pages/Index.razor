@@ -9,42 +9,45 @@
             
             <HeaderComponent></HeaderComponent>
             
-            @if (!IsStarted && !IsReady)
+            @if (!IsStarted)
             {
-                <div class="game-setup-layout">
-                    <div class="game-board-container">
-                        <GameBoard Field=GameState.OwnField 
-                                   EnemyField=GameState.EnemyField
-                                   CellClicked=FieldCellClicked></GameBoard>
+                @if (!IsReady)
+                {
+                    <div class="game-setup-layout">
+                        <div class="game-board-container">
+                            <GameBoard Field=GameState.OwnField 
+                                       EnemyField=GameState.EnemyField
+                                       CellClicked=FieldCellClicked></GameBoard>
+                        </div>
+                        
+                        <div class="game-sidebar">
+                            <ShipCountIndicator></ShipCountIndicator>
+                        </div>
                     </div>
                     
-                    <div class="game-sidebar">
-                        <ShipCountIndicator></ShipCountIndicator>
+                    <div class="button-container">
+                        <button class="btn btn-danger" disabled="@(ClearButtonDisable || _isClearLoading)" @onclick=ClearButtonClicked>
+                            @if (_isClearLoading)
+                            {
+                                <LoadingSpinner Show="true" Size="LoadingSpinner.SpinnerSize.Small" Inline="true" />
+                            }
+                            else
+                            {
+                                <span>Clear</span>
+                            }
+                        </button>
+                        <button class="btn btn-success" disabled="@(!FleetComplete || _showWaitingIndicator)" @onclick=OnReadyButtonClick>
+                            @if (_showWaitingIndicator)
+                            {
+                                <LoadingSpinner Show="true" Size="LoadingSpinner.SpinnerSize.Small" Inline="true" />
+                            }
+                            else
+                            {
+                                <span>Ready</span>
+                            }
+                        </button>
                     </div>
-                </div>
-                
-                <div class="button-container">
-                    <button class="btn btn-danger" disabled="@(ClearButtonDisable || _isClearLoading)" @onclick=ClearButtonClicked>
-                        @if (_isClearLoading)
-                        {
-                            <LoadingSpinner Show="true" Size="LoadingSpinner.SpinnerSize.Small" Inline="true" />
-                        }
-                        else
-                        {
-                            <span>Clear</span>
-                        }
-                    </button>
-                    <button class="btn btn-success" disabled="@(!FleetComplete || _showWaitingIndicator)" @onclick=OnReadyButtonClick>
-                        @if (_showWaitingIndicator)
-                        {
-                            <LoadingSpinner Show="true" Size="LoadingSpinner.SpinnerSize.Small" Inline="true" />
-                        }
-                        else
-                        {
-                            <span>Ready</span>
-                        }
-                    </button>
-                </div>
+                }
                 
                 @if (ShouldShowWaitingIndicator())
                 {
