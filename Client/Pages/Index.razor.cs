@@ -23,9 +23,11 @@ public partial class Index
     public string _gameOverClass = string.Empty;
     
     // Loading states
-    private bool _isReadyLoading = false;
     private bool _isClearLoading = false;
     private bool _isCellClickLoading = false;
+    
+    // Waiting indicator state
+    private bool _showWaitingIndicator = false;
 
     protected override Task OnInitializedAsync()
     {
@@ -86,19 +88,24 @@ public partial class Index
 
     private async Task OnReadyButtonClick()
     {
-        if (!FleetComplete || _isReadyLoading) return;
+        Console.WriteLine($"Ready button clicked. FleetComplete: {FleetComplete}, _showWaitingIndicator: {_showWaitingIndicator}");
         
-        _isReadyLoading = true;
+        if (!FleetComplete || _showWaitingIndicator) return;
+        
+        _showWaitingIndicator = true;
+        Console.WriteLine($"Set _showWaitingIndicator = true. IsReady: {IsReady}, IsStarted: {IsStarted}");
         StateHasChanged();
         
         try
         {
             await BattleHub?.SendAsync(nameof(IGameHub.PlayerReady), Player.Id)!;
+            Console.WriteLine("Sent PlayerReady to server");
         }
-        finally
+        catch (Exception ex)
         {
-            // Keep loading state until we get confirmation from server
-            // Will be cleared in OnUpdateGameState when player state changes
+            Console.WriteLine($"Error sending PlayerReady: {ex.Message}");
+            _showWaitingIndicator = false;
+            StateHasChanged();
         }
     }
 
@@ -112,13 +119,16 @@ public partial class Index
     /// </summary>
     private async Task OnUpdateGameState(GameStateClient updatedState)
     {
+        Console.WriteLine($"OnUpdateGameState: Player.State={updatedState.Player.State}, Stage={updatedState.Stage}, _showWaitingIndicator={_showWaitingIndicator}");
+        
         // Update the game state through the service
         GameStateService.UpdateGameState(updatedState);
         
-        // Clear ready loading state only when player actually becomes ready or game starts
-        if (_isReadyLoading && (updatedState.Player.State == PlayerStateEnum.Ready || updatedState.Stage == GameStageEnum.Game))
+        // Clear waiting indicator when game starts
+        if (_showWaitingIndicator && updatedState.Stage == GameStageEnum.Game)
         {
-            _isReadyLoading = false;
+            Console.WriteLine("Clearing _showWaitingIndicator - game started");
+            _showWaitingIndicator = false;
         }
         
         await InvokeAsync(StateHasChanged);
@@ -172,14 +182,19 @@ public partial class Index
     
     #region Helper Methods
     
+    private bool ShouldShowWaitingIndicator()
+    {
+        // Simple approach: show if we explicitly set the flag, or if player is ready but game hasn't started
+        var shouldShow = _showWaitingIndicator || (IsReady && !IsStarted);
+        Console.WriteLine($"ShouldShowWaitingIndicator: _showWaitingIndicator={_showWaitingIndicator}, IsReady={IsReady}, IsStarted={IsStarted}, result={shouldShow}");
+        return shouldShow;
+    }
+    
     private string GetWaitingText()
     {
-        if (_isReadyLoading)
-            return "Getting ready...";
-        else if (IsReady)
-            return "Waiting for opponent...";
-        else
-            return "Waiting...";
+        var text = IsReady ? "Waiting for opponent..." : "Getting ready...";
+        Console.WriteLine($"GetWaitingText: IsReady={IsReady}, returning='{text}'");
+        return text;
     }
     
     #endregion

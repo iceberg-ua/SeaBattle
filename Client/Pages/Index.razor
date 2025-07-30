@@ -34,8 +34,8 @@
                             <span>Clear</span>
                         }
                     </button>
-                    <button class="btn btn-success" disabled="@(!FleetComplete || _isReadyLoading)" @onclick=OnReadyButtonClick>
-                        @if (_isReadyLoading)
+                    <button class="btn btn-success" disabled="@(!FleetComplete || _showWaitingIndicator)" @onclick=OnReadyButtonClick>
+                        @if (_showWaitingIndicator)
                         {
                             <LoadingSpinner Show="true" Size="LoadingSpinner.SpinnerSize.Small" Inline="true" />
                         }
@@ -46,7 +46,7 @@
                     </button>
                 </div>
                 
-                @if ((IsReady || _isReadyLoading) && !IsStarted)
+                @if (ShouldShowWaitingIndicator())
                 {
                     <div class="waiting-indicator">
                         <LoadingSpinner Show="true" Size="LoadingSpinner.SpinnerSize.Medium" Text="@GetWaitingText()" />
