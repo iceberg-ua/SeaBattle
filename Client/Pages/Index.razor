@@ -11,20 +11,20 @@
             
             @if (!IsStarted)
             {
-                @if (!IsReady)
-                {
-                    <div class="game-setup-layout">
-                        <div class="game-board-container">
-                            <GameBoard Field=GameState.OwnField 
-                                       EnemyField=GameState.EnemyField
-                                       CellClicked=FieldCellClicked></GameBoard>
-                        </div>
-                        
-                        <div class="game-sidebar">
-                            <ShipCountIndicator></ShipCountIndicator>
-                        </div>
+                <div class="game-setup-layout">
+                    <div class="game-board-container">
+                        <GameBoard Field=GameState.OwnField 
+                                   EnemyField=GameState.EnemyField
+                                   CellClicked=@(IsReady ? null : FieldCellClicked)></GameBoard>
                     </div>
                     
+                    <div class="game-sidebar">
+                        <ShipCountIndicator></ShipCountIndicator>
+                    </div>
+                </div>
+                
+                @if (!IsReady)
+                {
                     <div class="button-container">
                         <button class="btn btn-danger" disabled="@(ClearButtonDisable || _isClearLoading)" @onclick=ClearButtonClicked>
                             @if (_isClearLoading)
