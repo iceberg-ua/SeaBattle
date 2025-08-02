@@ -18,9 +18,12 @@
                                    CellClicked=@(IsReady ? null : FieldCellClicked)></GameBoard>
                     </div>
                     
-                    <div class="game-sidebar">
-                        <ShipCountIndicator></ShipCountIndicator>
-                    </div>
+                    @if (!IsReady)
+                    {
+                        <div class="game-sidebar">
+                            <ShipCountIndicator></ShipCountIndicator>
+                        </div>
+                    }
                 </div>
                 
                 @if (!IsReady)
@@ -46,13 +49,6 @@
                                 <span>Ready</span>
                             }
                         </button>
-                    </div>
-                }
-                
-                @if (ShouldShowWaitingIndicator())
-                {
-                    <div class="waiting-indicator">
-                        <LoadingSpinner Show="true" Size="LoadingSpinner.SpinnerSize.Medium" Text="@GetWaitingText()" />
                     </div>
                 }
             }

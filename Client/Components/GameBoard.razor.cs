@@ -21,11 +21,20 @@ public partial class GameBoard
     private bool EnemyFieldDisabled => GameState?.Player.State is PlayerStateEnum.WaitingForTurn;
 
     private bool IsWaitingForOpponent => GameState?.Player.State is PlayerStateEnum.WaitingForTurn;
+    
+    private bool IsWaitingForOpponentInSetup => GameState?.Player.State is PlayerStateEnum.Ready;
 
     private string GetWaitingMessage()
     {
         return GameState?.Player.State is PlayerStateEnum.WaitingForTurn 
             ? "Opponent's Turn" 
+            : "";
+    }
+    
+    private string GetSetupWaitingMessage()
+    {
+        return GameState?.Player.State is PlayerStateEnum.Ready 
+            ? "Waiting for Opponent" 
             : "";
     }
 

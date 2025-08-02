@@ -1,5 +1,9 @@
 <div class="field-container">
-    <Battlefield Field=@Field FieldSize=GameState.FieldSize CellClicked=@OnCellClicked Disabled="OwnFieldDisabled"/>
+    <div class="own-field-wrapper">
+        <Battlefield Field=@Field FieldSize=GameState.FieldSize CellClicked=@OnCellClicked Disabled="OwnFieldDisabled"/>
+        <WaitingOverlay IsVisible="@IsWaitingForOpponentInSetup" 
+                      Message="@GetSetupWaitingMessage()" />
+    </div>
 
     @if (GameState.Stage == GameStageEnum.Game)
     {

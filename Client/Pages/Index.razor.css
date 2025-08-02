@@ -48,17 +48,6 @@
 }
 
 /* Loading states */
-.waiting-indicator {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    padding: 20px;
-    margin: 15px 0;
-    background: rgba(40, 167, 69, 0.05);
-    border: 2px dashed #28a745;
-    border-radius: 8px;
-    color: #28a745;
-}
 
 .game-loading-overlay {
     position: absolute;
@@ -100,8 +89,4 @@
         height: 32px;
     }
     
-    .waiting-indicator {
-        padding: 15px;
-        margin: 12px 0;
-    }
 }

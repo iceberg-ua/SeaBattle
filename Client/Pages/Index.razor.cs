@@ -182,20 +182,5 @@ public partial class Index
     
     #region Helper Methods
     
-    private bool ShouldShowWaitingIndicator()
-    {
-        // Simple approach: show if we explicitly set the flag, or if player is ready but game hasn't started
-        var shouldShow = _showWaitingIndicator || (IsReady && !IsStarted);
-        Console.WriteLine($"ShouldShowWaitingIndicator: _showWaitingIndicator={_showWaitingIndicator}, IsReady={IsReady}, IsStarted={IsStarted}, result={shouldShow}");
-        return shouldShow;
-    }
-    
-    private string GetWaitingText()
-    {
-        var text = IsReady ? "Waiting for opponent..." : "Getting ready...";
-        Console.WriteLine($"GetWaitingText: IsReady={IsReady}, returning='{text}'");
-        return text;
-    }
-    
     #endregion
 }
