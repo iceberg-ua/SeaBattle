@@ -3,6 +3,10 @@
 
     @if (GameState.Stage == GameStageEnum.Game)
     {
-        <Battlefield Field=@EnemyField FieldSize=GameState.FieldSize CellClicked=@OnCellClicked Disabled="EnemyFieldDisabled" />
+        <div class="enemy-field-wrapper">
+            <Battlefield Field=@EnemyField FieldSize=GameState.FieldSize CellClicked=@OnCellClicked Disabled="EnemyFieldDisabled" />
+            <WaitingOverlay IsVisible="@IsWaitingForOpponent" 
+                          Message="@GetWaitingMessage()" />
+        </div>
     }
 </div>

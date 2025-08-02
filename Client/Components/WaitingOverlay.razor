@@ -1,0 +1,21 @@
+@using SeaBattle.Shared.Player
+
+@if (IsVisible)
+{
+    <div class="waiting-overlay" @onclick="@(() => {})" @onclick:stopPropagation="true">
+        <div class="waiting-content">
+            <div class="waiting-spinner">
+                <div class="spinner-ring"></div>
+                <div class="spinner-ring"></div>
+                <div class="spinner-ring"></div>
+                <div class="spinner-ring"></div>
+            </div>
+            <div class="waiting-text">@Message</div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public bool IsVisible { get; set; }
+    [Parameter] public string Message { get; set; } = "Opponent's Turn";
+}

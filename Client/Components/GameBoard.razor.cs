@@ -20,6 +20,15 @@ public partial class GameBoard
 
     private bool EnemyFieldDisabled => GameState?.Player.State is PlayerStateEnum.WaitingForTurn;
 
+    private bool IsWaitingForOpponent => GameState?.Player.State is PlayerStateEnum.WaitingForTurn;
+
+    private string GetWaitingMessage()
+    {
+        return GameState?.Player.State is PlayerStateEnum.WaitingForTurn 
+            ? "Opponent's Turn" 
+            : "";
+    }
+
     private async void OnCellClicked((int x, int y) cell)
     {
         try
