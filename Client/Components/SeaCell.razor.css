@@ -134,3 +134,36 @@
         transform: translateX(3px); 
     }
 }
+
+/* Targeting feedback - vibrant target highlighting */
+.sea-cell.target-cell {
+    background-color: #FF6B35 !important;
+    box-shadow: 0 4px 15px rgba(255, 107, 53, 0.6), inset 0 0 10px rgba(255, 255, 255, 0.3);
+    transform: scale(1.08);
+    z-index: 10;
+    border: 2px solid #FF8A50;
+    animation: pulse-target 1.5s ease-in-out infinite;
+}
+
+/* Override target highlighting when cell is already hit/miss */
+.sea-cell.hit.target-cell {
+    background-color: #EF5350 !important;
+    border-color: #FF8A50;
+    animation: none;
+}
+
+.sea-cell.miss.target-cell {
+    background-color: #42A5F5 !important;
+    border-color: #FF8A50;
+    animation: none;
+}
+
+/* Subtle pulse animation for targeting */
+@keyframes pulse-target {
+    0%, 100% {
+        box-shadow: 0 4px 15px rgba(255, 107, 53, 0.6), inset 0 0 10px rgba(255, 255, 255, 0.3);
+    }
+    50% {
+        box-shadow: 0 6px 20px rgba(255, 107, 53, 0.8), inset 0 0 15px rgba(255, 255, 255, 0.4);
+    }
+}

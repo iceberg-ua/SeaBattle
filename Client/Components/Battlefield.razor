@@ -6,7 +6,12 @@
                 @for (var j = 0; j < FieldSize; j++)
                 {
                     <td>
-                        <SeaCell X=i Y=j Clicked=CellClicked State="Field[i * 10 + j]"></SeaCell>
+                        <SeaCell X=i Y=j 
+                                 Clicked=CellClicked 
+                                 State="Field[i * 10 + j]" 
+                                 MouseEnter=OnCellMouseEnter 
+                                 MouseLeave=OnCellMouseLeave 
+                                 TargetingCssClass="@GetTargetingCssClass(i, j)"></SeaCell>
                     </td>
                 }
             </tr>
@@ -27,5 +32,41 @@
     [Parameter]
     public EventCallback<(int,int)> CellClicked { get; set; }
 
+    [Parameter]
+    public bool EnableTargeting { get; set; } = false;
+
+    private (int x, int y)? _hoveredCell = null;
+
     private string StateClass => Disabled ? "hover-disabled" : "";
+
+    private void OnCellMouseEnter((int x, int y) cell)
+    {
+        if (EnableTargeting && !Disabled)
+        {
+            _hoveredCell = cell;
+            StateHasChanged();
+        }
+    }
+
+    private void OnCellMouseLeave((int x, int y) cell)
+    {
+        if (EnableTargeting && !Disabled)
+        {
+            _hoveredCell = null;
+            StateHasChanged();
+        }
+    }
+
+    private string GetTargetingCssClass(int x, int y)
+    {
+        if (!EnableTargeting || Disabled || _hoveredCell == null)
+            return "";
+
+        var (hoveredX, hoveredY) = _hoveredCell.Value;
+        
+        if (x == hoveredX && y == hoveredY)
+            return "target-cell";
+            
+        return "";
+    }
 }

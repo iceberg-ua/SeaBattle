@@ -1,6 +1,6 @@
 <div class="field-container">
     <div class="own-field-wrapper">
-        <Battlefield Field=@Field FieldSize=GameState.FieldSize CellClicked=@OnCellClicked Disabled="OwnFieldDisabled"/>
+        <Battlefield Field=@Field FieldSize=GameState.FieldSize CellClicked=@OnCellClicked Disabled="OwnFieldDisabled" EnableTargeting="false"/>
         <WaitingOverlay IsVisible="@IsWaitingForOpponentInSetup" 
                       Message="@GetSetupWaitingMessage()" />
     </div>
@@ -8,7 +8,7 @@
     @if (GameState.Stage == GameStageEnum.Game)
     {
         <div class="enemy-field-wrapper">
-            <Battlefield Field=@EnemyField FieldSize=GameState.FieldSize CellClicked=@OnCellClicked Disabled="EnemyFieldDisabled" />
+            <Battlefield Field=@EnemyField FieldSize=GameState.FieldSize CellClicked=@OnCellClicked Disabled="EnemyFieldDisabled" EnableTargeting="true" />
             <WaitingOverlay IsVisible="@IsWaitingForOpponent" 
                           Message="@GetWaitingMessage()" />
         </div>

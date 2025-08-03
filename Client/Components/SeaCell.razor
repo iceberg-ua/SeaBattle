@@ -1,4 +1,4 @@
-<div class="sea-cell @CssState @CssClass" id="cell-@($"{X}-{Y}")" @onmousedown=CellClick>
+<div class="sea-cell @CssState @CssClass @TargetingCssClass" id="cell-@($"{X}-{Y}")" @onmousedown=CellClick @onmouseenter=OnMouseEnter @onmouseleave=OnMouseLeave>
     @if (State == CellState.hit)
     {
         <div class="hit-marker"></div>
@@ -25,10 +25,29 @@
     [Parameter]
     public string CssClass { get; set; } = "";
 
+    [Parameter]
+    public EventCallback<(int, int)> MouseEnter { get; set; }
+
+    [Parameter]
+    public EventCallback<(int, int)> MouseLeave { get; set; }
+
+    [Parameter]
+    public string TargetingCssClass { get; set; } = "";
+
     private string CssState => State.ToString();
 
     private async void CellClick()
     {
         await Clicked.InvokeAsync((X, Y));
+    }
+
+    private async void OnMouseEnter()
+    {
+        await MouseEnter.InvokeAsync((X, Y));
+    }
+
+    private async void OnMouseLeave()
+    {
+        await MouseLeave.InvokeAsync((X, Y));
     }
 }
