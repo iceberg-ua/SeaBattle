@@ -33,6 +33,9 @@ builder.Services.AddScoped<IDomainEventPublisher, LoggingDomainEventPublisher>()
 builder.Services.AddSingleton<GameLockingService>();
 builder.Services.AddSingleton<ConnectionTrackingService>();
 
+// Background services
+builder.Services.AddHostedService<GameCleanupService>();
+
 var app = builder.Build();
 
 app.UseResponseCompression();

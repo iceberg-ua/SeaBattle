@@ -7,7 +7,7 @@ using SeaBattle.Shared.Player;
 
 namespace SeaBattle.Client.Pages;
 
-public partial class Index
+public partial class Index : IDisposable
 {
     [CascadingParameter]
     public HubConnection BattleHub { get; set; } = null!;
@@ -29,14 +29,18 @@ public partial class Index
     // Waiting indicator state
     private bool _showWaitingIndicator = false;
 
+    // Disposal tracking
+    private bool _disposed = false;
+    private readonly List<IDisposable> _hubSubscriptions = new();
+
     protected override Task OnInitializedAsync()
     {
-        // Single comprehensive state update handler
-        BattleHub.On<GameStateClient>(nameof(IGameHub.UpdateGameState), OnUpdateGameState);
-        BattleHub.On(nameof(IGameHub.GameStarted), OnGameStarted);
-        BattleHub.On<bool>(nameof(IGameHub.GameOver), OnGameOver);
-        BattleHub.On<string>(nameof(IGameHub.Error), OnError);
-        BattleHub.On<Guid>(nameof(IGameHub.PlayerDisconnected), OnPlayerDisconnected);
+        // Register event handlers and track subscriptions for cleanup
+        _hubSubscriptions.Add(BattleHub.On<GameStateClient>(nameof(IGameHub.UpdateGameState), OnUpdateGameState));
+        _hubSubscriptions.Add(BattleHub.On(nameof(IGameHub.GameStarted), OnGameStarted));
+        _hubSubscriptions.Add(BattleHub.On<bool>(nameof(IGameHub.GameOver), OnGameOver));
+        _hubSubscriptions.Add(BattleHub.On<string>(nameof(IGameHub.Error), OnError));
+        _hubSubscriptions.Add(BattleHub.On<Guid>(nameof(IGameHub.PlayerDisconnected), OnPlayerDisconnected));
 
         return base.OnInitializedAsync();
     }
@@ -182,5 +186,37 @@ public partial class Index
     
     #region Helper Methods
     
+    #endregion
+
+    #region IDisposable Implementation
+
+    public void Dispose()
+    {
+        Dispose(true);
+        GC.SuppressFinalize(this);
+    }
+
+    protected virtual void Dispose(bool disposing)
+    {
+        if (!_disposed && disposing)
+        {
+            // Clean up SignalR event handler subscriptions
+            foreach (var subscription in _hubSubscriptions)
+            {
+                try
+                {
+                    subscription?.Dispose();
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error disposing SignalR subscription: {ex.Message}");
+                }
+            }
+            _hubSubscriptions.Clear();
+
+            _disposed = true;
+        }
+    }
+
     #endregion
 }
