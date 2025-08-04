@@ -95,17 +95,17 @@ public class GameCleanupService : BackgroundService
     /// <summary>
     /// Processes a single expired disconnection.
     /// </summary>
-    private async Task ProcessExpiredDisconnection(ConnectionTrackingService.PlayerDisconnection disconnection)
+    private Task ProcessExpiredDisconnection(ConnectionTrackingService.PlayerDisconnection disconnection)
     {
         // Use game lock to ensure atomic operation
-        await _gameLockingService.ExecuteWithGameLockAsync(disconnection.GameId, async () =>
+        return _gameLockingService.ExecuteWithGameLockAsync(disconnection.GameId, () =>
         {
             // Double-check that player is still disconnected (might have reconnected)
             if (_connectionTrackingService.IsPlayerConnected(disconnection.PlayerId))
             {
                 _logger.LogDebug("Player {PlayerId} reconnected, skipping expired disconnection cleanup", disconnection.PlayerId);
                 _connectionTrackingService.RemovePendingDisconnection(disconnection.PlayerId);
-                return;
+                return Task.CompletedTask;
             }
 
             var gameState = _gameStorage.GetGameById(disconnection.GameId);
@@ -113,7 +113,7 @@ public class GameCleanupService : BackgroundService
             {
                 _logger.LogDebug("Game {GameId} no longer exists, removing pending disconnection", disconnection.GameId);
                 _connectionTrackingService.RemovePendingDisconnection(disconnection.PlayerId);
-                return;
+                return Task.CompletedTask;
             }
 
             _logger.LogInformation("Processing expired disconnection for player {PlayerId} in game {GameId} after {Minutes} minutes",
@@ -128,6 +128,8 @@ public class GameCleanupService : BackgroundService
 
             // Remove the pending disconnection
             _connectionTrackingService.RemovePendingDisconnection(disconnection.PlayerId);
+            
+            return Task.CompletedTask;
         });
     }
 

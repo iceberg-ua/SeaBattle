@@ -13,6 +13,11 @@ public class GameStateClient
     public CellState[] OwnField { get; set; }
     public CellState[] EnemyField { get; set; }
 
+    // State versioning and validation properties
+    public long StateVersion { get; set; } = 0;
+    public DateTime LastUpdated { get; set; } = DateTime.UtcNow;
+    public string? StateChecksum { get; set; }
+
     public void InitializeFields()
     {
         OwnField = new CellState[FieldSize * FieldSize];
@@ -35,6 +40,36 @@ public class GameStateClient
                 }
             }
         }
+    }
+
+    /// <summary>
+    /// Calculates a simple checksum for state validation
+    /// </summary>
+    public string CalculateChecksum()
+    {
+        var data = $"{Player?.Id}_{Stage}_{FieldSize}_{FleetComplete}";
+        
+        // Add field data to checksum
+        if (OwnField != null)
+        {
+            data += "_" + string.Join("", OwnField.Select(c => (int)c));
+        }
+        if (EnemyField != null)
+        {
+            data += "_" + string.Join("", EnemyField.Select(c => (int)c));
+        }
+
+        // Simple hash calculation
+        return Convert.ToHexString(System.Text.Encoding.UTF8.GetBytes(data).Take(8).ToArray());
+    }
+
+    /// <summary>
+    /// Updates the state metadata when the state changes
+    /// </summary>
+    public void UpdateStateMetadata()
+    {
+        LastUpdated = DateTime.UtcNow;
+        StateChecksum = CalculateChecksum();
     }
 }
 

@@ -42,6 +42,9 @@ public partial class Index : IDisposable
         _hubSubscriptions.Add(BattleHub.On<string>(nameof(IGameHub.Error), OnError));
         _hubSubscriptions.Add(BattleHub.On<Guid>(nameof(IGameHub.PlayerDisconnected), OnPlayerDisconnected));
 
+        // Subscribe to state refresh requests
+        GameStateService.StateRefreshRequested += OnStateRefreshRequested;
+
         return base.OnInitializedAsync();
     }
 
@@ -125,8 +128,15 @@ public partial class Index : IDisposable
     {
         Console.WriteLine($"OnUpdateGameState: Player.State={updatedState.Player.State}, Stage={updatedState.Stage}, _showWaitingIndicator={_showWaitingIndicator}");
         
-        // Update the game state through the service
-        GameStateService.UpdateGameState(updatedState);
+        // Update the game state through the service with validation
+        bool updateSucceeded = GameStateService.UpdateGameState(updatedState);
+        if (!updateSucceeded)
+        {
+            Console.WriteLine("State update rejected due to validation failure. Requesting state refresh.");
+            // Request a fresh state from the server
+            GameStateService.RequestStateRefresh();
+            return;
+        }
         
         // Clear waiting indicator when game starts
         if (_showWaitingIndicator && updatedState.Stage == GameStageEnum.Game)
@@ -182,6 +192,24 @@ public partial class Index : IDisposable
         await InvokeAsync(StateHasChanged);
     }
 
+    private async void OnStateRefreshRequested()
+    {
+        try
+        {
+            Console.WriteLine("State refresh requested - requesting fresh state from server");
+            
+            // Request fresh state from the server
+            if (GameState?.Player?.Id != null)
+            {
+                await BattleHub.SendAsync("RefreshGameState", GameState.Player.Id);
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error requesting state refresh: {ex.Message}");
+        }
+    }
+
     #endregion
     
     #region Helper Methods
@@ -213,6 +241,16 @@ public partial class Index : IDisposable
                 }
             }
             _hubSubscriptions.Clear();
+
+            // Clean up state service event handlers
+            try
+            {
+                GameStateService.StateRefreshRequested -= OnStateRefreshRequested;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error disposing state service event handler: {ex.Message}");
+            }
 
             _disposed = true;
         }

@@ -61,9 +61,17 @@ public partial class MainLayout
             Navigation.NavigateTo("/sign-in");
         else
         {
-            GameStateService.UpdateGameState(gameState);
-            await LocalStorage.SetItemAsync("player", gameState.Player.Id);
-            Navigation.NavigateTo("/");
+            bool updateSucceeded = GameStateService.UpdateGameState(gameState);
+            if (updateSucceeded)
+            {
+                await LocalStorage.SetItemAsync("player", gameState.Player.Id);
+                Navigation.NavigateTo("/");
+            }
+            else
+            {
+                Console.WriteLine("Failed to update game state during join. Redirecting to sign-in.");
+                Navigation.NavigateTo("/sign-in");
+            }
         }
     }
     
