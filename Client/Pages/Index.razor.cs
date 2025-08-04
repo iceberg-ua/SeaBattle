@@ -61,6 +61,8 @@ public partial class Index : IDisposable
                                   GameState?.FleetComplete == true;
     private bool IsStarted => GameState?.Stage == GameStageEnum.Game;
     private bool IsReady => GameState?.Player.State == PlayerStateEnum.Ready;
+    private bool IsGameOver => GameState?.Stage == GameStageEnum.GameOver;
+    private bool ShowSetupButtons => !IsReady && !IsStarted && !IsGameOver;
 
     #region Events
 
@@ -251,6 +253,38 @@ public partial class Index : IDisposable
         catch (Exception ex)
         {
             ErrorHandler.HandleSignalRError("RefreshGameState", ex);
+        }
+    }
+
+    private async Task OnRematchButtonClick()
+    {
+        if (!IsGameOver)
+            return;
+
+        try
+        {
+            await BattleHub?.SendAsync(nameof(IGameHub.RequestRematch), Player.Id)!;
+            NotificationService.ShowInfo("Rematch Request", "Requesting rematch with the same opponent...");
+        }
+        catch (Exception ex)
+        {
+            ErrorHandler.HandleSignalRError(nameof(IGameHub.RequestRematch), ex);
+        }
+    }
+
+    private async Task OnNewGameButtonClick()
+    {
+        if (!IsGameOver)
+            return;
+
+        try
+        {
+            await BattleHub?.SendAsync(nameof(IGameHub.StartNewGame), Player.Id)!;
+            NotificationService.ShowInfo("Starting New Game", "Looking for a new opponent...");
+        }
+        catch (Exception ex)
+        {
+            ErrorHandler.HandleSignalRError(nameof(IGameHub.StartNewGame), ex);
         }
     }
 

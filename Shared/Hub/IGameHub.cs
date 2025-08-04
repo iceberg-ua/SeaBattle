@@ -47,6 +47,20 @@ public interface IGameHub
     /// <returns>A task representing the asynchronous operation</returns>
     Task ReconnectToGame(Guid playerId);
 
+    /// <summary>
+    /// Requests a rematch with the same opponent after game completion.
+    /// </summary>
+    /// <param name="playerId">Unique identifier for the player requesting rematch</param>
+    /// <returns>A task representing the asynchronous operation</returns>
+    Task RequestRematch(Guid playerId);
+
+    /// <summary>
+    /// Starts a new game with a different opponent after game completion.
+    /// </summary>
+    /// <param name="playerId">Unique identifier for the player starting new game</param>
+    /// <returns>A task representing the asynchronous operation</returns>
+    Task StartNewGame(Guid playerId);
+
     #endregion
 
     #region Server response (handled on client)

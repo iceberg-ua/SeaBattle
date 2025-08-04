@@ -63,6 +63,20 @@ public class ConnectionTrackingService
     }
 
     /// <summary>
+    /// Updates the game ID for all connections of a specific player.
+    /// </summary>
+    /// <param name="playerId">The player ID</param>
+    /// <param name="gameId">The new game ID</param>
+    public void UpdateGameId(Guid playerId, Guid gameId)
+    {
+        var playerConnections = GetPlayerConnections(playerId);
+        foreach (var connectionId in playerConnections)
+        {
+            UpdateConnectionGame(connectionId, gameId);
+        }
+    }
+
+    /// <summary>
     /// Removes a connection when it disconnects.
     /// </summary>
     /// <param name="connectionId">The SignalR connection ID</param>
