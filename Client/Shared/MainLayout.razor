@@ -11,8 +11,13 @@
 <CascadingValue Value="BattleHub" IsFixed>
     @if (_initialized)
     {
-        <main>
-            @Body
-        </main>
+        <GameErrorBoundary>
+            <main>
+                @Body
+            </main>
+        </GameErrorBoundary>
     }
+    
+    <!-- Global notification system -->
+    <NotificationToast />
 </CascadingValue>

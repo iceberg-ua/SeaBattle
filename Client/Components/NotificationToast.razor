@@ -1,0 +1,116 @@
+@using SeaBattle.Client.Services
+@implements IDisposable
+
+<div class="notification-container">
+    @foreach (var notification in _notifications)
+    {
+        <div class="toast @GetToastClass(notification.Type) @(notification.IsExpired ? "fade-out" : "slide-in")" 
+             @key="notification.Id">
+            <div class="toast-header">
+                <div class="toast-icon">
+                    @GetIcon(notification.Type)
+                </div>
+                <div class="toast-title">@notification.Title</div>
+                <button class="toast-close" @onclick="() => DismissNotification(notification.Id)" 
+                        aria-label="Close notification">
+                    ×
+                </button>
+            </div>
+            <div class="toast-body">
+                @notification.Message
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    [Inject] public INotificationService NotificationService { get; set; } = null!;
+    
+    private List<Notification> _notifications = new();
+    private bool _disposed = false;
+
+    protected override void OnInitialized()
+    {
+        NotificationService.NotificationAdded += OnNotificationAdded;
+        NotificationService.NotificationRemoved += OnNotificationRemoved;
+        
+        // Load existing notifications
+        _notifications = NotificationService.ActiveNotifications.ToList();
+    }
+
+    private void OnNotificationAdded(Notification notification)
+    {
+        InvokeAsync(() =>
+        {
+            _notifications.Add(notification);
+            StateHasChanged();
+            
+            // Auto-dismiss if configured
+            if (notification.AutoDismiss)
+            {
+                _ = Task.Delay(notification.DismissAfterMs).ContinueWith(async _ =>
+                {
+                    if (!_disposed)
+                    {
+                        await InvokeAsync(() =>
+                        {
+                            NotificationService.RemoveNotification(notification.Id);
+                        });
+                    }
+                });
+            }
+        });
+    }
+
+    private void OnNotificationRemoved(string id)
+    {
+        InvokeAsync(() =>
+        {
+            var notification = _notifications.FirstOrDefault(n => n.Id == id);
+            if (notification != null)
+            {
+                _notifications.Remove(notification);
+                StateHasChanged();
+            }
+        });
+    }
+
+    private void DismissNotification(string id)
+    {
+        NotificationService.RemoveNotification(id);
+    }
+
+    private string GetToastClass(NotificationType type)
+    {
+        return type switch
+        {
+            NotificationType.Success => "toast-success",
+            NotificationType.Warning => "toast-warning",
+            NotificationType.Error => "toast-error",
+            NotificationType.Info => "toast-info",
+            _ => "toast-info"
+        };
+    }
+
+    private string GetIcon(NotificationType type)
+    {
+        return type switch
+        {
+            NotificationType.Success => "✓",
+            NotificationType.Warning => "⚠",
+            NotificationType.Error => "✕",
+            NotificationType.Info => "ℹ",
+            _ => "ℹ"
+        };
+    }
+
+    public void Dispose()
+    {
+        if (!_disposed)
+        {
+            NotificationService.NotificationAdded -= OnNotificationAdded;
+            NotificationService.NotificationRemoved -= OnNotificationRemoved;
+            _disposed = true;
+        }
+    }
+}

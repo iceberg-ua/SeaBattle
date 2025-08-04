@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.SignalR.Client;
 using SeaBattle.Shared;
 using SeaBattle.Shared.Hub;
 using SeaBattle.Shared.Player;
+using SeaBattle.Client.Services;
 
 namespace SeaBattle.Client.Pages;
 
@@ -14,6 +15,12 @@ public partial class Index : IDisposable
 
     [Inject]
     public NavigationManager Navigation { get; set; } = null!;
+
+    [Inject]
+    public IErrorHandlingService ErrorHandler { get; set; } = null!;
+
+    [Inject]
+    public INotificationService NotificationService { get; set; } = null!;
 
     private GameStateClient? GameState => GameStateService.GameState;
     public PlayerInfo Player => GameState?.Player!;
@@ -85,6 +92,11 @@ public partial class Index : IDisposable
         try
         {
             await BattleHub?.SendAsync(nameof(IGameHub.ClearField), Player.Id)!;
+            NotificationService.ShowSuccess("Field Cleared", "All ships have been removed from your field.");
+        }
+        catch (Exception ex)
+        {
+            ErrorHandler.HandleSignalRError(nameof(IGameHub.ClearField), ex);
         }
         finally
         {
@@ -110,7 +122,7 @@ public partial class Index : IDisposable
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error sending PlayerReady: {ex.Message}");
+            ErrorHandler.HandleSignalRError(nameof(IGameHub.PlayerReady), ex);
             _showWaitingIndicator = false;
             StateHasChanged();
         }
@@ -132,8 +144,8 @@ public partial class Index : IDisposable
         bool updateSucceeded = GameStateService.UpdateGameState(updatedState);
         if (!updateSucceeded)
         {
-            Console.WriteLine("State update rejected due to validation failure. Requesting state refresh.");
-            // Request a fresh state from the server
+            ErrorHandler.HandleStateError("UpdateGameState", 
+                $"State validation failed for stage {updatedState.Stage}");
             GameStateService.RequestStateRefresh();
             return;
         }
@@ -161,20 +173,48 @@ public partial class Index : IDisposable
         _gameOverClass = resultMsg.ToLower();
         _gameIsOver = true;
 
+        // Show game result notification
+        if (win)
+        {
+            NotificationService.ShowSuccess("Victory!", "Congratulations! You won the battle!");
+        }
+        else
+        {
+            NotificationService.ShowInfo("Game Over", "Better luck next time! Want to play again?");
+        }
+
         // Final state update will come via OnUpdateGameState
         await InvokeAsync(StateHasChanged);
     }
 
     private async Task OnError(string message)
     {
-        // For now, log to console. In production, you might want to show a toast notification
-        // or update the UI to display the error message
-        Console.WriteLine($"Game Error: {message}");
-        
-        // If it's a critical connection error, redirect to sign-in
+        // Handle different types of errors appropriately
         if (message.Contains("Invalid player ID") || message.Contains("Game not found"))
         {
+            var error = new GameError(
+                Code: "INVALID_GAME_STATE",
+                Title: "Game Session Invalid",
+                UserMessage: "Your game session is no longer valid. You'll be redirected to start a new game.",
+                TechnicalDetails: message,
+                Severity: ErrorSeverity.High);
+
+            ErrorHandler.HandleError(error);
+            
+            // Delay navigation to let user see the message
+            await Task.Delay(2000);
             Navigation.NavigateTo("/sign-in");
+        }
+        else
+        {
+            var error = new GameError(
+                Code: "GAME_ERROR",
+                Title: "Game Error",
+                UserMessage: "An error occurred during the game. Please try again.",
+                TechnicalDetails: message,
+                Severity: ErrorSeverity.Medium);
+
+            ErrorHandler.HandleError(error);
         }
         
         await InvokeAsync(StateHasChanged);
@@ -185,6 +225,9 @@ public partial class Index : IDisposable
         Console.WriteLine($"Player {disconnectedPlayerId} disconnected during the game");
         
         // Show a notification to the user that their opponent disconnected
+        NotificationService.ShowWarning("Opponent Disconnected", 
+            "Your opponent has disconnected from the game. You win by forfeit!");
+        
         _gameOverString = "Opponent disconnected! You win by forfeit.";
         _gameOverClass = "win";
         _gameIsOver = true;
@@ -202,11 +245,12 @@ public partial class Index : IDisposable
             if (GameState?.Player?.Id != null)
             {
                 await BattleHub.SendAsync("RefreshGameState", GameState.Player.Id);
+                NotificationService.ShowInfo("Refreshing Game", "Requesting updated game state from server...");
             }
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error requesting state refresh: {ex.Message}");
+            ErrorHandler.HandleSignalRError("RefreshGameState", ex);
         }
     }
 

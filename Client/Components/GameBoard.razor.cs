@@ -1,10 +1,14 @@
 using Microsoft.AspNetCore.Components;
 using SeaBattle.Shared;
+using SeaBattle.Client.Services;
 
 namespace SeaBattle.Client.Components;
 
 public partial class GameBoard
 {
+    [Inject] 
+    public IErrorHandlingService ErrorHandler { get; set; } = null!;
+    
     private GameStateClient? GameState => GameStateService.GameState;
 
     [Parameter]
@@ -44,9 +48,9 @@ public partial class GameBoard
         {
             await CellClicked.InvokeAsync(cell).ConfigureAwait(false);
         }
-        catch (Exception e)
+        catch (Exception ex)
         {
-            Console.WriteLine(e);
+            ErrorHandler.HandleException(ex, $"Cell click at ({cell.x}, {cell.y})");
         }
     }
 }

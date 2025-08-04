@@ -1,0 +1,146 @@
+.error-boundary {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 400px;
+    padding: 40px 20px;
+    background-color: #fef2f2;
+    border: 1px solid #fecaca;
+    border-radius: 8px;
+    margin: 20px;
+}
+
+.error-content {
+    text-align: center;
+    max-width: 600px;
+}
+
+.error-icon {
+    font-size: 48px;
+    margin-bottom: 16px;
+}
+
+.error-title {
+    color: #dc2626;
+    font-size: 24px;
+    font-weight: 600;
+    margin-bottom: 12px;
+}
+
+.error-message {
+    color: #6b7280;
+    font-size: 16px;
+    line-height: 1.5;
+    margin-bottom: 24px;
+}
+
+.error-details {
+    margin: 20px 0;
+    text-align: left;
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    padding: 16px;
+}
+
+.error-details summary {
+    cursor: pointer;
+    font-weight: 500;
+    color: #374151;
+    margin-bottom: 8px;
+}
+
+.error-details summary:hover {
+    color: #1f2937;
+}
+
+.error-stack {
+    background-color: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 4px;
+    padding: 12px;
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+    color: #374151;
+    overflow-x: auto;
+    white-space: pre-wrap;
+    word-break: break-all;
+    margin-top: 8px;
+}
+
+.error-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.error-actions .btn {
+    padding: 10px 20px;
+    border-radius: 6px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: 1px solid;
+    text-decoration: none;
+    font-size: 14px;
+}
+
+.error-actions .btn-primary {
+    background-color: #dc2626;
+    border-color: #dc2626;
+    color: white;
+}
+
+.error-actions .btn-primary:hover {
+    background-color: #b91c1c;
+    border-color: #b91c1c;
+}
+
+.error-actions .btn-secondary {
+    background-color: #6b7280;
+    border-color: #6b7280;
+    color: white;
+}
+
+.error-actions .btn-secondary:hover {
+    background-color: #4b5563;
+    border-color: #4b5563;
+}
+
+.error-actions .btn-outline {
+    background-color: transparent;
+    border-color: #d1d5db;
+    color: #374151;
+}
+
+.error-actions .btn-outline:hover {
+    background-color: #f9fafb;
+    border-color: #9ca3af;
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+    .error-boundary {
+        margin: 10px;
+        padding: 20px 15px;
+        min-height: 300px;
+    }
+    
+    .error-title {
+        font-size: 20px;
+    }
+    
+    .error-message {
+        font-size: 14px;
+    }
+    
+    .error-actions {
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .error-actions .btn {
+        width: 200px;
+    }
+}

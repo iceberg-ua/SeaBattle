@@ -1,0 +1,89 @@
+@using Microsoft.AspNetCore.Components.Web
+@using Microsoft.Extensions.Logging
+@inherits ErrorBoundaryBase
+@inject ILogger<GameErrorBoundary> Logger
+@inject INotificationService NotificationService
+
+@if (CurrentException is null)
+{
+    @ChildContent
+}
+else
+{
+    <div class="error-boundary">
+        <div class="error-content">
+            <div class="error-icon">⚠️</div>
+            <h3 class="error-title">Something went wrong</h3>
+            <p class="error-message">
+                We encountered an unexpected error. The issue has been logged and we're working to fix it.
+            </p>
+            
+            @if (ShowDetails)
+            {
+                <details class="error-details">
+                    <summary>Technical Details</summary>
+                    <pre class="error-stack">@CurrentException.ToString()</pre>
+                </details>
+            }
+            
+            <div class="error-actions">
+                <button class="btn btn-primary" @onclick="RecoverFromError">
+                    Try Again
+                </button>
+                <button class="btn btn-secondary" @onclick="ToggleDetails">
+                    @(ShowDetails ? "Hide" : "Show") Details
+                </button>
+                <button class="btn btn-outline" @onclick="ReloadPage">
+                    Reload Page
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] 
+    public new RenderFragment? ChildContent { get; set; }
+    
+    [Parameter] 
+    public bool ShowDetailsDefault { get; set; } = false;
+    
+    private bool ShowDetails { get; set; }
+
+    protected override void OnInitialized()
+    {
+        ShowDetails = ShowDetailsDefault;
+    }
+
+    protected override Task OnErrorAsync(Exception exception)
+    {
+        Logger.LogError(exception, "Unhandled exception caught by ErrorBoundary");
+        
+        // Show user notification
+        NotificationService.ShowError(
+            "Application Error", 
+            "An unexpected error occurred. Please try refreshing the page if the problem persists.",
+            false);
+        
+        return Task.CompletedTask;
+    }
+
+    private void RecoverFromError()
+    {
+        Logger.LogInformation("User triggered error recovery");
+        base.Recover();
+    }
+
+    private void ToggleDetails()
+    {
+        ShowDetails = !ShowDetails;
+    }
+
+    private void ReloadPage()
+    {
+        Logger.LogInformation("User triggered page reload from error boundary");
+        NavigationManager.Refresh(forceReload: true);
+    }
+    
+    [Inject] private NavigationManager NavigationManager { get; set; } = null!;
+}

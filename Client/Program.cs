@@ -12,4 +12,8 @@ builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri(builder.
 builder.Services.AddScoped<ILocalStorageService, LocalStorageService>();
 builder.Services.AddScoped<IGameStateService, GameStateService>();
 
+// Error handling and notification services
+builder.Services.AddScoped<INotificationService, NotificationService>();
+builder.Services.AddScoped<IErrorHandlingService, ErrorHandlingService>();
+
 await builder.Build().RunAsync();
