@@ -509,6 +509,51 @@ public class BattleHub(GlobalGameStorage storage, GameService gameService, GameL
         }
     }
 
+    public async Task CancelRematchRequest(Guid playerId)
+    {
+        try
+        {
+            var gameState = GetGameState(playerId);
+            if (gameState == null)
+            {
+                Logger.LogWarning("Game state not found for player {PlayerId} canceling rematch", playerId);
+                await Clients.Caller.Error("Game not found");
+                return;
+            }
+
+            if (!gameState.Players.ContainsKey(playerId))
+            {
+                Logger.LogWarning("Player {PlayerId} not found in game {GameId} for rematch cancellation", playerId, gameState.Id);
+                await Clients.Caller.Error("Player not found in game");
+                return;
+            }
+
+            // Find the opponent who should have received the original request
+            var cancelingPlayer = gameState.Players[playerId];
+            var opponentId = gameState.Players.Keys.FirstOrDefault(id => id != playerId);
+            
+            if (opponentId == Guid.Empty)
+            {
+                Logger.LogWarning("No opponent found for rematch cancellation from player {PlayerId}", playerId);
+                await Clients.Caller.Error("No opponent found");
+                return;
+            }
+
+            Logger.LogInformation("Player {CancelingPlayer} ({PlayerId}) canceling rematch request to opponent {OpponentId}", 
+                cancelingPlayer.Name, playerId, opponentId);
+
+            // Notify opponent that the rematch request was canceled
+            await Clients.Group(opponentId.ToString()).RematchRequestCanceled(cancelingPlayer.Name);
+            
+            Logger.LogInformation("Rematch request cancellation sent from {CancelingPlayer} to opponent", cancelingPlayer.Name);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error in CancelRematchRequest for player {PlayerId}", playerId);
+            await Clients.Caller.Error("Failed to cancel rematch request");
+        }
+    }
+
     private async Task CreateRematchGame(GameState oldGameState)
     {
         try

@@ -2,6 +2,54 @@
 
 @inject IJSRuntime JsRuntime
 
+<style>
+    .rematch-modal {
+        border-radius: 12px;
+        backdrop-filter: blur(10px);
+    }
+    
+    .rematch-modal .modal-body {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        border-radius: 12px;
+    }
+    
+    .rematch-icon {
+        background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+        border-radius: 50%;
+        width: 60px;
+        height: 60px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 15px;
+    }
+    
+    .rematch-spinner {
+        background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+        border-radius: 50%;
+        width: 50px;
+        height: 50px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 15px;
+    }
+    
+    .rematch-modal .btn {
+        border-radius: 20px;
+        font-weight: 500;
+        transition: transform 0.2s ease;
+    }
+    
+    .rematch-modal .btn:hover {
+        transform: translateY(-1px);
+    }
+    
+    .rematch-modal .modal-backdrop {
+        background-color: rgba(0, 0, 0, 0.6);
+    }
+</style>
+
 @if (GameStateService.HasState)
 {
     <div class="container centered-form">
@@ -85,23 +133,25 @@
 
 @if (_showRematchRequest)
 {
-    <div class="modal fade show" style="display: block;" tabindex="-1" role="dialog">
-        <div class="modal-dialog modal-dialog-centered" role="document">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Rematch Request</h5>
-                </div>
-                <div class="modal-body">
-                    <p><strong>@_rematchRequestPlayerName</strong> wants a rematch!</p>
-                    <p>Do you want to play another round?</p>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-success" @onclick="AcceptRematchRequest">
-                        Accept
-                    </button>
-                    <button type="button" class="btn btn-secondary" @onclick="RejectRematchRequest">
-                        Decline
-                    </button>
+    <div class="modal fade show rematch-modal" style="display: block;" tabindex="-1" role="dialog">
+        <div class="modal-dialog modal-dialog-centered modal-sm" role="document">
+            <div class="modal-content border-0 shadow-lg rematch-modal">
+                <div class="modal-body text-center p-4">
+                    <div class="rematch-icon">
+                        <i class="fas fa-sync-alt text-white fa-lg"></i>
+                    </div>
+                    <h5 class="modal-title mb-2 fw-bold">Rematch Request</h5>
+                    <p class="mb-4 text-muted">
+                        <strong class="text-primary">@_rematchRequestPlayerName</strong> wants a rematch!
+                    </p>
+                    <div class="d-flex gap-2 justify-content-center">
+                        <button type="button" class="btn btn-success btn-sm px-3 py-1" @onclick="AcceptRematchRequest">
+                            <i class="fas fa-check me-1"></i> Accept
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm px-3 py-1" @onclick="RejectRematchRequest">
+                            <i class="fas fa-times me-1"></i> Decline
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -111,23 +161,21 @@
 
 @if (_showRematchPending)
 {
-    <div class="modal fade show" style="display: block;" tabindex="-1" role="dialog">
-        <div class="modal-dialog modal-dialog-centered" role="document">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Rematch Request Sent</h5>
-                </div>
-                <div class="modal-body">
-                    <p>Waiting for <strong>@_rematchTargetPlayerName</strong> to respond...</p>
-                    <div class="text-center">
-                        <div class="spinner-border spinner-border-sm" role="status">
+    <div class="modal fade show rematch-modal" style="display: block;" tabindex="-1" role="dialog">
+        <div class="modal-dialog modal-dialog-centered modal-sm" role="document">
+            <div class="modal-content border-0 shadow-lg rematch-modal">
+                <div class="modal-body text-center p-4">
+                    <div class="rematch-spinner">
+                        <div class="spinner-border text-white spinner-border-sm" role="status">
                             <span class="visually-hidden">Loading...</span>
                         </div>
                     </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" @onclick="CancelRematchRequest">
-                        Cancel
+                    <h5 class="modal-title mb-2 fw-bold">Request Sent</h5>
+                    <p class="mb-4 text-muted small">
+                        Waiting for <strong class="text-primary">@_rematchTargetPlayerName</strong> to respond...
+                    </p>
+                    <button type="button" class="btn btn-outline-danger btn-sm px-3 py-1" @onclick="CancelRematchRequest">
+                        <i class="fas fa-ban me-1"></i> Cancel
                     </button>
                 </div>
             </div>

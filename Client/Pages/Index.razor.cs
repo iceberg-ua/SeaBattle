@@ -59,6 +59,7 @@ public partial class Index : IDisposable
         _hubSubscriptions.Add(BattleHub.On<Guid>(nameof(IGameHub.PlayerDisconnected), OnPlayerDisconnected));
         _hubSubscriptions.Add(BattleHub.On<string, Guid>(nameof(IGameHub.RematchRequested), OnRematchRequested));
         _hubSubscriptions.Add(BattleHub.On<bool, string>(nameof(IGameHub.RematchResponse), OnRematchResponse));
+        _hubSubscriptions.Add(BattleHub.On<string>(nameof(IGameHub.RematchRequestCanceled), OnRematchRequestCanceled));
         _hubSubscriptions.Add(BattleHub.On<GameStateClient?>(nameof(IGameHub.JoinedGame), OnJoinedGame));
 
         // Subscribe to state refresh requests
@@ -307,6 +308,18 @@ public partial class Index : IDisposable
         await InvokeAsync(StateHasChanged);
     }
 
+    private async Task OnRematchRequestCanceled(string cancelingPlayerName)
+    {
+        Console.WriteLine($"OnRematchRequestCanceled: {cancelingPlayerName} canceled their rematch request");
+        
+        // Hide the rematch request dialog
+        _showRematchRequest = false;
+        
+        NotificationService.ShowInfo("Rematch Canceled", $"{cancelingPlayerName} canceled their rematch request.");
+
+        await InvokeAsync(StateHasChanged);
+    }
+
     private async Task OnJoinedGame(GameStateClient? gameState)
     {
         Console.WriteLine($"OnJoinedGame: Received new game state. Player: {gameState?.Player?.Id}");
@@ -424,10 +437,24 @@ public partial class Index : IDisposable
         }
     }
 
-    private void CancelRematchRequest()
+    private async Task CancelRematchRequest()
     {
-        _showRematchPending = false;
-        StateHasChanged();
+        if (!_showRematchPending) return;
+
+        try
+        {
+            Console.WriteLine($"CancelRematchRequest: Canceling rematch request from player {Player?.Id}");
+            await BattleHub?.SendAsync(nameof(IGameHub.CancelRematchRequest), Player.Id)!;
+            
+            _showRematchPending = false;
+            NotificationService.ShowInfo("Request Canceled", "Your rematch request has been canceled.");
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"CancelRematchRequest: Error - {ex.Message}");
+            ErrorHandler.HandleSignalRError(nameof(IGameHub.CancelRematchRequest), ex);
+        }
     }
 
 

@@ -63,6 +63,13 @@ public interface IGameHub
     Task RespondToRematch(Guid playerId, bool accepted);
 
     /// <summary>
+    /// Cancels a previously sent rematch request.
+    /// </summary>
+    /// <param name="playerId">Unique identifier for the player canceling the request</param>
+    /// <returns>A task representing the asynchronous operation</returns>
+    Task CancelRematchRequest(Guid playerId);
+
+    /// <summary>
     /// Starts a new game with a different opponent after game completion.
     /// </summary>
     /// <param name="playerId">Unique identifier for the player starting new game</param>
@@ -130,6 +137,13 @@ public interface IGameHub
     /// <param name="respondingPlayerName">Name of the player who responded</param>
     /// <returns>A task representing the asynchronous operation</returns>
     Task RematchResponse(bool accepted, string respondingPlayerName);
+
+    /// <summary>
+    /// Notifies the client that a rematch request has been canceled.
+    /// </summary>
+    /// <param name="cancelingPlayerName">Name of the player who canceled the request</param>
+    /// <returns>A task representing the asynchronous operation</returns>
+    Task RematchRequestCanceled(string cancelingPlayerName);
 
     #endregion
 }
