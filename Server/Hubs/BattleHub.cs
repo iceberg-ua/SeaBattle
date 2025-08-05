@@ -184,9 +184,12 @@ public class BattleHub(GlobalGameStorage storage, GameService gameService, GameL
         await Clients.Group(winnerId.ToString()).GameOver(win: true);
         await Clients.Group(loserId.ToString()).GameOver(win: false);
 
-        // Clean up the game and its lock
-        GameStorage.RemoveGame(gameState.Id);
-        GameLockingService.CleanupGameLock(gameState.Id);
+        // DON'T clean up the game immediately - keep it for potential rematch requests
+        // The game will be cleaned up when:
+        // 1. A rematch is started (CreateRematchGame)
+        // 2. A player starts a new game (StartNewGame)
+        // 3. Players disconnect (background cleanup service)
+        Logger.LogInformation("Game {GameId} completed, keeping state for potential rematch requests", gameState.Id);
     }
 
     /// <summary>
@@ -398,6 +401,8 @@ public class BattleHub(GlobalGameStorage storage, GameService gameService, GameL
     {
         try
         {
+            Logger.LogInformation("RequestRematch called for player {PlayerId}", playerId);
+            
             var gameState = GetGameState(playerId);
             if (gameState == null)
             {
@@ -406,6 +411,9 @@ public class BattleHub(GlobalGameStorage storage, GameService gameService, GameL
                 return;
             }
 
+            Logger.LogInformation("Game state found: {GameId}, Stage: {Stage}, Players: {PlayerCount}", 
+                gameState.Id, gameState.Stage, gameState.Players.Count);
+
             if (!gameState.Players.ContainsKey(playerId))
             {
                 Logger.LogWarning("Player {PlayerId} not found in game {GameId} for rematch request", playerId, gameState.Id);
@@ -413,24 +421,114 @@ public class BattleHub(GlobalGameStorage storage, GameService gameService, GameL
                 return;
             }
 
-            Logger.LogInformation("Player {PlayerId} requesting rematch in game {GameId}", playerId, gameState.Id);
+            // Find the opponent
+            var requestingPlayer = gameState.Players[playerId];
+            var opponentId = gameState.Players.Keys.FirstOrDefault(id => id != playerId);
+            
+            if (opponentId == Guid.Empty)
+            {
+                Logger.LogWarning("No opponent found for rematch request from player {PlayerId}", playerId);
+                await Clients.Caller.Error("No opponent found");
+                return;
+            }
 
-            // Remove current game and create new one with same players
-            var playerNames = gameState.Players.Values.Select(p => p.Name).ToList();
-            var playerIds = gameState.Players.Keys.ToList();
+            var opponent = gameState.Players[opponentId];
+
+            Logger.LogInformation("Player {RequestingPlayer} ({PlayerId}) requesting rematch with {Opponent} ({OpponentId}) in game {GameId}", 
+                requestingPlayer.Name, playerId, opponent.Name, opponentId, gameState.Id);
+
+            // Check if opponent is connected
+            if (!ConnectionTracking.IsPlayerConnected(opponentId))
+            {
+                Logger.LogWarning("Opponent {OpponentId} is not connected for rematch request", opponentId);
+                await Clients.Caller.Error("Opponent is not connected");
+                return;
+            }
+
+            // Send rematch request to opponent
+            Logger.LogInformation("Sending rematch request to opponent group: {OpponentId}", opponentId);
+            await Clients.Group(opponentId.ToString()).RematchRequested(requestingPlayer.Name, playerId);
+            
+            Logger.LogInformation("Rematch request sent from {RequestingPlayer} to {Opponent}", 
+                requestingPlayer.Name, opponent.Name);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error in RequestRematch for player {PlayerId}", playerId);
+            await Clients.Caller.Error("Failed to send rematch request");
+        }
+    }
+
+    public async Task RespondToRematch(Guid playerId, bool accepted)
+    {
+        try
+        {
+            var gameState = GetGameState(playerId);
+            if (gameState == null)
+            {
+                Logger.LogWarning("Game state not found for player {PlayerId} responding to rematch", playerId);
+                await Clients.Caller.Error("Game not found");
+                return;
+            }
+
+            if (!gameState.Players.ContainsKey(playerId))
+            {
+                Logger.LogWarning("Player {PlayerId} not found in game {GameId} for rematch response", playerId, gameState.Id);
+                await Clients.Caller.Error("Player not found in game");
+                return;
+            }
+
+            var respondingPlayer = gameState.Players[playerId];
+            var requestingPlayerId = gameState.Players.Keys.FirstOrDefault(id => id != playerId);
+            
+            if (requestingPlayerId == Guid.Empty)
+            {
+                Logger.LogWarning("No requesting player found for rematch response from player {PlayerId}", playerId);
+                await Clients.Caller.Error("No requesting player found");
+                return;
+            }
+
+            var requestingPlayer = gameState.Players[requestingPlayerId];
+
+            Logger.LogInformation("Player {PlayerId} {Response} rematch request from {RequestingPlayerId}", 
+                playerId, accepted ? "accepted" : "rejected", requestingPlayerId);
+
+            // Send response to requesting player
+            await Clients.Group(requestingPlayerId.ToString()).RematchResponse(accepted, respondingPlayer.Name);
+
+            if (accepted)
+            {
+                // Create new game with same players
+                await CreateRematchGame(gameState);
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error in RespondToRematch for player {PlayerId}", playerId);
+            await Clients.Caller.Error("Failed to respond to rematch");
+        }
+    }
+
+    private async Task CreateRematchGame(GameState oldGameState)
+    {
+        try
+        {
+            var playerNames = oldGameState.Players.Values.Select(p => p.Name).ToList();
+            var playerIds = oldGameState.Players.Keys.ToList();
             
             // Clean up current game
-            GameStorage.RemoveGame(gameState.Id);
-            GameLockingService.CleanupGameLock(gameState.Id);
+            GameStorage.RemoveGame(oldGameState.Id);
+            GameLockingService.CleanupGameLock(oldGameState.Id);
 
             // Create new game with same players
             var newGameState = GameStorage.CreateGame();
+            
+            // First, clear the players dictionary since we'll be adding with specific IDs
+            newGameState.Players.Clear();
+            
             for (int i = 0; i < playerNames.Count && i < playerIds.Count; i++)
             {
-                var newPlayerState = GameService.AddPlayer(newGameState, playerNames[i]);
-                // Use the same player IDs for the rematch
-                newPlayerState.PlayerId = playerIds[i];
-                newGameState.Players[playerIds[i]] = newPlayerState;
+                GameService.AddPlayerWithId(newGameState, playerNames[i], playerIds[i]);
             }
 
             // Update connection tracking for all players
@@ -438,11 +536,18 @@ public class BattleHub(GlobalGameStorage storage, GameService gameService, GameL
             {
                 if (ConnectionTracking.IsPlayerConnected(originalPlayerId))
                 {
-                    // Remove from old game groups
-                    await Groups.RemoveFromGroupAsync(Context.ConnectionId, gameState.Id.ToString());
+                    // Get all connections for this player and update them
+                    var playerConnections = ConnectionTracking.GetPlayerConnections(originalPlayerId);
+                    foreach (var connectionId in playerConnections)
+                    {
+                        // Remove from old game groups
+                        await Groups.RemoveFromGroupAsync(connectionId, oldGameState.Id.ToString());
+                        
+                        // Add to new game groups
+                        await Groups.AddToGroupAsync(connectionId, newGameState.Id.ToString());
+                    }
                     
-                    // Add to new game groups
-                    await Groups.AddToGroupAsync(Context.ConnectionId, newGameState.Id.ToString());
+                    // Update connection tracking
                     ConnectionTracking.UpdateGameId(originalPlayerId, newGameState.Id);
                     
                     // Send new game state
@@ -451,12 +556,12 @@ public class BattleHub(GlobalGameStorage storage, GameService gameService, GameL
                 }
             }
 
-            Logger.LogInformation("Rematch started for players from game {OldGameId} to new game {NewGameId}", gameState.Id, newGameState.Id);
+            Logger.LogInformation("Rematch game created from {OldGameId} to new game {NewGameId}", oldGameState.Id, newGameState.Id);
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Error in RequestRematch for player {PlayerId}", playerId);
-            await Clients.Caller.Error("Failed to start rematch");
+            Logger.LogError(ex, "Error creating rematch game");
+            throw;
         }
     }
 
@@ -484,7 +589,11 @@ public class BattleHub(GlobalGameStorage storage, GameService gameService, GameL
             var playerName = gameState.Players[playerId].Name;
 
             // Remove player from current game groups
-            await Groups.RemoveFromGroupAsync(Context.ConnectionId, gameState.Id.ToString());
+            var playerConnections = ConnectionTracking.GetPlayerConnections(playerId);
+            foreach (var connectionId in playerConnections)
+            {
+                await Groups.RemoveFromGroupAsync(connectionId, gameState.Id.ToString());
+            }
             
             // Clean up current game if it becomes empty or handle remaining players
             gameState.Players.Remove(playerId);

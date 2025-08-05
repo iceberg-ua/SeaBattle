@@ -16,6 +16,20 @@ public class GameService
         return playerState;
     }
 
+    public PlayerState AddPlayerWithId(GameState game, string playerName, Guid playerId)
+    {
+        if (game.Players.Count >= 2)
+            throw new Exception("There can be only two players in the game");
+
+        var playerState = new PlayerState(playerName, game.Id, game.Size)
+        {
+            PlayerId = playerId
+        };
+        game.Players.Add(playerId, playerState);
+
+        return playerState;
+    }
+
     public void SetPlayerReady(GameState game, Guid playerId)
     {
         game.Players[playerId].SetReady();

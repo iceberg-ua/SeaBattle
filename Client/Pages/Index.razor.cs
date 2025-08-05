@@ -36,6 +36,11 @@ public partial class Index : IDisposable
     // Waiting indicator state
     private bool _showWaitingIndicator = false;
 
+    // Rematch request state
+    private bool _showRematchRequest = false;
+    private string _rematchRequestPlayerName = string.Empty;
+    private Guid _rematchRequestPlayerId = Guid.Empty;
+
     // Disposal tracking
     private bool _disposed = false;
     private readonly List<IDisposable> _hubSubscriptions = new();
@@ -48,6 +53,8 @@ public partial class Index : IDisposable
         _hubSubscriptions.Add(BattleHub.On<bool>(nameof(IGameHub.GameOver), OnGameOver));
         _hubSubscriptions.Add(BattleHub.On<string>(nameof(IGameHub.Error), OnError));
         _hubSubscriptions.Add(BattleHub.On<Guid>(nameof(IGameHub.PlayerDisconnected), OnPlayerDisconnected));
+        _hubSubscriptions.Add(BattleHub.On<string, Guid>(nameof(IGameHub.RematchRequested), OnRematchRequested));
+        _hubSubscriptions.Add(BattleHub.On<bool, string>(nameof(IGameHub.RematchResponse), OnRematchResponse));
 
         // Subscribe to state refresh requests
         GameStateService.StateRefreshRequested += OnStateRefreshRequested;
@@ -58,7 +65,13 @@ public partial class Index : IDisposable
     // Computed properties based on GameState
     private bool ClearButtonDisable => GameState?.OwnField.All(c => c == CellState.empty) ?? true;
     private bool FleetComplete => GameState?.Player.State == PlayerStateEnum.Formation && 
+#if DEBUG
+                                  (GameState?.FleetComplete == true || HasAtLeastOneShip);
+#else
                                   GameState?.FleetComplete == true;
+#endif
+
+    private bool HasAtLeastOneShip => GameState?.OwnField.Any(c => c == CellState.ship) ?? false;
     private bool IsStarted => GameState?.Stage == GameStageEnum.Game;
     private bool IsReady => GameState?.Player.State == PlayerStateEnum.Ready;
     private bool IsGameOver => GameState?.Stage == GameStageEnum.GameOver;
@@ -256,18 +269,57 @@ public partial class Index : IDisposable
         }
     }
 
+    private async Task OnRematchRequested(string requestingPlayerName, Guid requestingPlayerId)
+    {
+        Console.WriteLine($"OnRematchRequested: Received request from {requestingPlayerName} (ID: {requestingPlayerId})");
+        
+        _rematchRequestPlayerName = requestingPlayerName;
+        _rematchRequestPlayerId = requestingPlayerId;
+        _showRematchRequest = true;
+
+        NotificationService.ShowInfo("Rematch Request", $"{requestingPlayerName} wants a rematch!");
+
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task OnRematchResponse(bool accepted, string respondingPlayerName)
+    {
+        if (accepted)
+        {
+            NotificationService.ShowSuccess("Rematch Accepted", $"{respondingPlayerName} accepted your rematch request!");
+        }
+        else
+        {
+            NotificationService.ShowWarning("Rematch Declined", $"{respondingPlayerName} declined your rematch request.");
+        }
+
+        await InvokeAsync(StateHasChanged);
+    }
+
     private async Task OnRematchButtonClick()
     {
         if (!IsGameOver)
+        {
+            Console.WriteLine($"OnRematchButtonClick: Game not over. IsGameOver={IsGameOver}, Stage={GameState?.Stage}");
             return;
+        }
+
+        if (Player?.Id == null)
+        {
+            Console.WriteLine("OnRematchButtonClick: Player ID is null");
+            ErrorHandler.HandleStateError("RematchRequest", "Player information is missing");
+            return;
+        }
 
         try
         {
+            Console.WriteLine($"OnRematchButtonClick: Sending rematch request from player {Player.Id}");
             await BattleHub?.SendAsync(nameof(IGameHub.RequestRematch), Player.Id)!;
-            NotificationService.ShowInfo("Rematch Request", "Requesting rematch with the same opponent...");
+            NotificationService.ShowInfo("Rematch Request Sent", "Requesting rematch with the same opponent...");
         }
         catch (Exception ex)
         {
+            Console.WriteLine($"OnRematchButtonClick: Error - {ex.Message}");
             ErrorHandler.HandleSignalRError(nameof(IGameHub.RequestRematch), ex);
         }
     }
@@ -287,6 +339,41 @@ public partial class Index : IDisposable
             ErrorHandler.HandleSignalRError(nameof(IGameHub.StartNewGame), ex);
         }
     }
+
+    private async Task AcceptRematchRequest()
+    {
+        if (!_showRematchRequest) return;
+
+        try
+        {
+            await BattleHub?.SendAsync(nameof(IGameHub.RespondToRematch), Player.Id, true)!;
+            _showRematchRequest = false;
+            NotificationService.ShowSuccess("Rematch Accepted", "You accepted the rematch request!");
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            ErrorHandler.HandleSignalRError(nameof(IGameHub.RespondToRematch), ex);
+        }
+    }
+
+    private async Task RejectRematchRequest()
+    {
+        if (!_showRematchRequest) return;
+
+        try
+        {
+            await BattleHub?.SendAsync(nameof(IGameHub.RespondToRematch), Player.Id, false)!;
+            _showRematchRequest = false;
+            NotificationService.ShowInfo("Rematch Declined", "You declined the rematch request.");
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            ErrorHandler.HandleSignalRError(nameof(IGameHub.RespondToRematch), ex);
+        }
+    }
+
 
     #endregion
     

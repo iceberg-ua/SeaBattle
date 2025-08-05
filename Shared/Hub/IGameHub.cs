@@ -55,6 +55,14 @@ public interface IGameHub
     Task RequestRematch(Guid playerId);
 
     /// <summary>
+    /// Responds to a rematch request (accept or reject).
+    /// </summary>
+    /// <param name="playerId">Unique identifier for the player responding</param>
+    /// <param name="accepted">True to accept, false to reject</param>
+    /// <returns>A task representing the asynchronous operation</returns>
+    Task RespondToRematch(Guid playerId, bool accepted);
+
+    /// <summary>
     /// Starts a new game with a different opponent after game completion.
     /// </summary>
     /// <param name="playerId">Unique identifier for the player starting new game</param>
@@ -106,6 +114,22 @@ public interface IGameHub
     /// <param name="playerId">ID of the player who disconnected</param>
     /// <returns>A task representing the asynchronous operation</returns>
     Task PlayerDisconnected(Guid playerId);
+
+    /// <summary>
+    /// Notifies the client of a rematch request from another player.
+    /// </summary>
+    /// <param name="requestingPlayerName">Name of the player requesting rematch</param>
+    /// <param name="requestingPlayerId">ID of the player requesting rematch</param>
+    /// <returns>A task representing the asynchronous operation</returns>
+    Task RematchRequested(string requestingPlayerName, Guid requestingPlayerId);
+
+    /// <summary>
+    /// Notifies the client of the response to their rematch request.
+    /// </summary>
+    /// <param name="accepted">True if accepted, false if rejected</param>
+    /// <param name="respondingPlayerName">Name of the player who responded</param>
+    /// <returns>A task representing the asynchronous operation</returns>
+    Task RematchResponse(bool accepted, string respondingPlayerName);
 
     #endregion
 }
