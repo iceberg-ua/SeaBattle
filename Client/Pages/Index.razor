@@ -144,12 +144,12 @@
                     <p class="mb-4 text-muted">
                         <strong class="text-primary">@_rematchRequestPlayerName</strong> wants a rematch!
                     </p>
-                    <div class="d-flex gap-2 justify-content-center">
-                        <button type="button" class="btn btn-success btn-sm px-3 py-1" @onclick="AcceptRematchRequest">
-                            <i class="fas fa-check me-1"></i> Accept
+                    <div class="d-flex gap-1 justify-content-center">
+                        <button type="button" class="btn btn-success btn-sm px-2 py-1 small" @onclick="AcceptRematchRequest">
+                            <i class="fas fa-check me-1 small"></i> Accept
                         </button>
-                        <button type="button" class="btn btn-outline-secondary btn-sm px-3 py-1" @onclick="RejectRematchRequest">
-                            <i class="fas fa-times me-1"></i> Decline
+                        <button type="button" class="btn btn-outline-secondary btn-sm px-2 py-1 small" @onclick="RejectRematchRequest">
+                            <i class="fas fa-times me-1 small"></i> Decline
                         </button>
                     </div>
                 </div>
@@ -174,8 +174,8 @@
                     <p class="mb-4 text-muted small">
                         Waiting for <strong class="text-primary">@_rematchTargetPlayerName</strong> to respond...
                     </p>
-                    <button type="button" class="btn btn-outline-danger btn-sm px-3 py-1" @onclick="CancelRematchRequest">
-                        <i class="fas fa-ban me-1"></i> Cancel
+                    <button type="button" class="btn btn-outline-danger btn-sm px-2 py-1 small" @onclick="CancelRematchRequest">
+                        <i class="fas fa-ban me-1 small"></i> Cancel
                     </button>
                 </div>
             </div>
