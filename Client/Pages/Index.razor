@@ -109,3 +109,30 @@
     <div class="modal-backdrop fade show"></div>
 }
 
+@if (_showRematchPending)
+{
+    <div class="modal fade show" style="display: block;" tabindex="-1" role="dialog">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Rematch Request Sent</h5>
+                </div>
+                <div class="modal-body">
+                    <p>Waiting for <strong>@_rematchTargetPlayerName</strong> to respond...</p>
+                    <div class="text-center">
+                        <div class="spinner-border spinner-border-sm" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="CancelRematchRequest">
+                        Cancel
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal-backdrop fade show"></div>
+}
+

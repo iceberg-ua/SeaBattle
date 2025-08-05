@@ -40,6 +40,10 @@ public partial class Index : IDisposable
     private bool _showRematchRequest = false;
     private string _rematchRequestPlayerName = string.Empty;
     private Guid _rematchRequestPlayerId = Guid.Empty;
+    
+    // Rematch requesting state (for the player who requested)
+    private bool _showRematchPending = false;
+    private string _rematchTargetPlayerName = string.Empty;
 
     // Disposal tracking
     private bool _disposed = false;
@@ -55,6 +59,7 @@ public partial class Index : IDisposable
         _hubSubscriptions.Add(BattleHub.On<Guid>(nameof(IGameHub.PlayerDisconnected), OnPlayerDisconnected));
         _hubSubscriptions.Add(BattleHub.On<string, Guid>(nameof(IGameHub.RematchRequested), OnRematchRequested));
         _hubSubscriptions.Add(BattleHub.On<bool, string>(nameof(IGameHub.RematchResponse), OnRematchResponse));
+        _hubSubscriptions.Add(BattleHub.On<GameStateClient?>(nameof(IGameHub.JoinedGame), OnJoinedGame));
 
         // Subscribe to state refresh requests
         GameStateService.StateRefreshRequested += OnStateRefreshRequested;
@@ -284,13 +289,45 @@ public partial class Index : IDisposable
 
     private async Task OnRematchResponse(bool accepted, string respondingPlayerName)
     {
+        Console.WriteLine($"OnRematchResponse: {respondingPlayerName} {(accepted ? "accepted" : "declined")} rematch");
+        
+        // Hide pending dialog
+        _showRematchPending = false;
+        
         if (accepted)
         {
             NotificationService.ShowSuccess("Rematch Accepted", $"{respondingPlayerName} accepted your rematch request!");
+            // Note: New game state will be sent via JoinedGame event
         }
         else
         {
             NotificationService.ShowWarning("Rematch Declined", $"{respondingPlayerName} declined your rematch request.");
+        }
+
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task OnJoinedGame(GameStateClient? gameState)
+    {
+        Console.WriteLine($"OnJoinedGame: Received new game state. Player: {gameState?.Player?.Id}");
+        
+        if (gameState != null)
+        {
+            // Update game state through the service
+            bool updateSucceeded = GameStateService.UpdateGameState(gameState);
+            if (!updateSucceeded)
+            {
+                ErrorHandler.HandleStateError("OnJoinedGame", 
+                    $"Failed to update game state for new game");
+                return;
+            }
+            
+            // Clear any pending dialogs since we're starting fresh
+            _showRematchRequest = false;
+            _showRematchPending = false;
+            _gameIsOver = false;
+            
+            Console.WriteLine($"OnJoinedGame: Successfully joined new game. Stage: {gameState.Stage}");
         }
 
         await InvokeAsync(StateHasChanged);
@@ -311,11 +348,24 @@ public partial class Index : IDisposable
             return;
         }
 
+        // Find opponent name for the pending dialog
+        var opponentName = "Unknown";
+        if (GameState?.OpponentsName != null)
+        {
+            opponentName = GameState.OpponentsName;
+        }
+
         try
         {
             Console.WriteLine($"OnRematchButtonClick: Sending rematch request from player {Player.Id}");
             await BattleHub?.SendAsync(nameof(IGameHub.RequestRematch), Player.Id)!;
-            NotificationService.ShowInfo("Rematch Request Sent", "Requesting rematch with the same opponent...");
+            
+            // Show pending request dialog
+            _rematchTargetPlayerName = opponentName;
+            _showRematchPending = true;
+            StateHasChanged();
+            
+            NotificationService.ShowInfo("Rematch Request Sent", $"Rematch request sent to {opponentName}");
         }
         catch (Exception ex)
         {
@@ -372,6 +422,12 @@ public partial class Index : IDisposable
         {
             ErrorHandler.HandleSignalRError(nameof(IGameHub.RespondToRematch), ex);
         }
+    }
+
+    private void CancelRematchRequest()
+    {
+        _showRematchPending = false;
+        StateHasChanged();
     }
 
 
